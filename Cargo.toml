@@ -1,0 +1,22 @@
+[package]
+name = "notor"
+version = "0.1.0"
+authors = ["wojciechkepka <wojtek.kepka@protonmail.com>"]
+edition = "2018"
+
+[lib]
+name = "notor"
+
+[[bin]]
+name = "notor"
+path = "./src/main.rs"
+
+
+[dependencies]
+tokio = { version = "0.2", features = ["full"] }
+warp = "0.2"
+pretty_env_logger = "0.3"
+serde = { version = "1", features = ["derive"] }
+log = "0.4"
+diesel = { version = "1", features = ["postgres", "numeric"] }
+dotenv = "0.15"
