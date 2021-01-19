@@ -14,11 +14,11 @@ impl NotFound {
 }
 
 #[derive(Debug)]
-pub(crate) struct InvalidNote(String);
-impl reject::Reject for InvalidNote {}
-impl InvalidNote {
+pub(crate) struct InvalidPayload(String);
+impl reject::Reject for InvalidPayload {}
+impl InvalidPayload {
     pub(crate) fn reject<S: ToString>(message: S) -> Rejection {
-        reject::custom(InvalidNote(message.to_string()))
+        reject::custom(InvalidPayload(message.to_string()))
     }
 }
 
@@ -41,7 +41,7 @@ pub(crate) async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infal
     } else if let Some(_) = err.find::<NotFound>() {
         code = StatusCode::NOT_FOUND;
         message = "not found".to_string();
-    } else if let Some(invalid_note) = err.find::<InvalidNote>() {
+    } else if let Some(invalid_note) = err.find::<InvalidPayload>() {
         code = StatusCode::BAD_REQUEST;
         message = invalid_note.0.clone();
     } else if let Some(deserialize) = err.find::<BodyDeserializeError>() {
