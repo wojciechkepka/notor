@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate diesel;
 
-mod db;
+pub mod db;
 mod handlers;
 mod models;
 mod rejections;

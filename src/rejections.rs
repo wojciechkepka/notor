@@ -6,21 +6,30 @@ use warp::{reject, reply, Rejection, Reply};
 
 #[derive(Debug)]
 pub(crate) struct NotFound;
+impl reject::Reject for NotFound {}
 impl NotFound {
     pub(crate) fn reject() -> Rejection {
         reject::custom(NotFound)
     }
 }
-impl reject::Reject for NotFound {}
 
 #[derive(Debug)]
 pub(crate) struct InvalidNote(String);
+impl reject::Reject for InvalidNote {}
 impl InvalidNote {
     pub(crate) fn reject<S: ToString>(message: S) -> Rejection {
         reject::custom(InvalidNote(message.to_string()))
     }
 }
-impl reject::Reject for InvalidNote {}
+
+#[derive(Debug)]
+pub(crate) struct DbError(String);
+impl reject::Reject for DbError {}
+impl DbError {
+    pub(crate) fn reject<S: ToString>(message: S) -> Rejection {
+        reject::custom(DbError(message.to_string()))
+    }
+}
 
 pub(crate) async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
     let mut code = StatusCode::INTERNAL_SERVER_ERROR;
