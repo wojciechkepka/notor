@@ -15,13 +15,13 @@ pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
         .lang("en")
         .title("Notor - index")
         .add_meta("viewport", "width=device-width, initial-scale=1")
-        .add_script(std::str::from_utf8(INDEX_SCRIPT).map_err(|e| InternalError::reject(e))?)
-        .add_style(std::str::from_utf8(INDEX_STYLE).map_err(|e| InternalError::reject(e))?)
+        .add_script(std::str::from_utf8(INDEX_SCRIPT).map_err(InternalError::reject)?)
+        .add_style(std::str::from_utf8(INDEX_STYLE).map_err(InternalError::reject)?)
         .body(body)
         .build()
-        .map_err(|e| InternalError::reject(e))?
+        .map_err(InternalError::reject)?
         .as_html()
-        .map_err(|e| InternalError::reject(e))?;
+        .map_err(InternalError::reject)?;
 
     Ok(reply::html(html))
 }
