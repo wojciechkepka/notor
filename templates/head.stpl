@@ -6,12 +6,23 @@
     <meta name="<%= *tag.name %>" content="<%= *tag.content %>">
     <% } %>
 
-    <% for style in styles.iter() { %>
-    <link rel="stylesheet" href="<%= *style %>">
+    <% for style_src in style_srcs.iter() { %>
+    <link rel="stylesheet" href="<%= *style_src %>">
     <% } %>
 
-    <% for script_src in scripts.iter() { %>
+    <% for script_src in script_srcs.iter() { %>
     <script src="<%= *script_src %>"></script>
     <% } %>
 
+    <% for script in scripts.iter() { %>
+    <script>
+        <%- script %>
+    </script>
+    <% } %>
+
+    <% for style in styles.iter() { %>
+    <style>
+        <%- style %>
+    </style>
+    <% } %>
 </head>

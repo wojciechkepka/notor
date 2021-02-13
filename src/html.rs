@@ -72,13 +72,23 @@ impl<B: TemplateOnce> HtmlContextBuilder<B> {
         self
     }
 
-    pub fn add_script<S: Into<String>>(mut self, src: S) -> Self {
-        self.head.add_script(src);
+    pub fn add_script<S: Into<String>>(mut self, script: S) -> Self {
+        self.head.add_script(script);
         self
     }
 
-    pub fn add_style<S: Into<String>>(mut self, href: S) -> Self {
-        self.head.add_style(href);
+    pub fn add_style<S: Into<String>>(mut self, style: S) -> Self {
+        self.head.add_style(style);
+        self
+    }
+
+    pub fn add_script_src<S: Into<String>>(mut self, src: S) -> Self {
+        self.head.add_script_src(src);
+        self
+    }
+
+    pub fn add_style_src<S: Into<String>>(mut self, href: S) -> Self {
+        self.head.add_style_src(href);
         self
     }
 
@@ -103,6 +113,8 @@ pub struct HeadContext {
     meta_tags: Vec<MetaTag>,
     scripts: Vec<String>,
     styles: Vec<String>,
+    script_srcs: Vec<String>,
+    style_srcs: Vec<String>,
 }
 
 impl HeadContext {
@@ -110,12 +122,20 @@ impl HeadContext {
         self.meta_tags.push(MetaTag::new(name, content))
     }
 
-    pub fn add_script<S: Into<String>>(&mut self, src: S) {
-        self.scripts.push(src.into())
+    pub fn add_script<S: Into<String>>(&mut self, script: S) {
+        self.scripts.push(script.into())
     }
 
-    pub fn add_style<S: Into<String>>(&mut self, href: S) {
-        self.styles.push(href.into())
+    pub fn add_style<S: Into<String>>(&mut self, style: S) {
+        self.styles.push(style.into())
+    }
+
+    pub fn add_script_src<S: Into<String>>(&mut self, src: S) {
+        self.script_srcs.push(src.into())
+    }
+
+    pub fn add_style_src<S: Into<String>>(&mut self, href: S) {
+        self.style_srcs.push(href.into())
     }
 }
 
@@ -127,6 +147,8 @@ impl Default for HeadContext {
             meta_tags: vec![],
             scripts: vec![],
             styles: vec![],
+            script_srcs: vec![],
+            style_srcs: vec![],
         }
     }
 }
