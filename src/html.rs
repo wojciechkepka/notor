@@ -72,7 +72,7 @@ impl<B: TemplateOnce> HtmlContextBuilder<B> {
         self
     }
 
-    pub fn add_script<S: Into<String>>(mut self, src: S) -> Self{
+    pub fn add_script<S: Into<String>>(mut self, src: S) -> Self {
         self.head.add_script(src);
         self
     }
@@ -87,9 +87,7 @@ impl<B: TemplateOnce> HtmlContextBuilder<B> {
             lang: self.lang,
             head: self.head,
             body: if let Some(body) = self.body {
-                let out = body.render_once()?;
-                println!("{}", out);
-                out
+                body.render_once()?
             } else {
                 "".to_string()
             },

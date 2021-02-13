@@ -12,7 +12,7 @@ fn with_db(db: Db) -> impl Filter<Extract = (Db,), Error = Infallible> + Clone {
 pub fn ro_get_notes(db: Db) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("notes")
         .and(warp::get())
-        .and(warp::filters::query::query::<NotesFilter>())
+        .and(warp::filters::query::query::<QueryFilter>())
         .and(with_db(db))
         .and_then(get_notes)
 }
@@ -66,7 +66,7 @@ pub fn ro_get_note_tags(db: Db) -> impl Filter<Extract = impl Reply, Error = Rej
 pub fn ro_get_tags(db: Db) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("tags")
         .and(warp::get())
-        .and(warp::filters::query::query::<NotesFilter>())
+        .and(warp::filters::query::query::<QueryFilter>())
         .and(with_db(db))
         .and_then(get_tags)
 }

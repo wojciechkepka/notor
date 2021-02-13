@@ -3,7 +3,7 @@
         <th>Id</th>
         <th>Title</th>
     </tr>
-<% for (i, note) in notes.iter().enumerate() { %>
+<% for note in notes.iter() { %>
 
     <tr>
         <td><%= note.note_id %></td>

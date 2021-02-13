@@ -1,24 +1,7 @@
-use super::models::Db;
-use super::models::Note;
-use super::models::Tag;
-use super::schema;
-use crate::html::HtmlContext;
-use crate::rejections::*;
-use crate::web::Index;
-use diesel::delete;
-use diesel::insert_into;
-use diesel::prelude::*;
-use diesel::update;
-use schema::tags::dsl::*;
-use serde::Deserialize;
-use warp::{reply, Rejection, Reply};
+use super::*;
+use crate::models::Note;
 
-#[derive(Deserialize)]
-pub(crate) struct NotesFilter {
-    limit: Option<i64>,
-}
-
-pub(crate) async fn get_notes(filter: NotesFilter, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn get_notes(filter: QueryFilter, conn: Db) -> Result<impl Reply, Rejection> {
     use schema::notes::dsl::*;
     let conn = conn.lock().map_err(|e| DbError::reject(e))?;
 
@@ -100,64 +83,6 @@ pub(crate) async fn update_note(id: i32, note: Note, conn: Db) -> Result<impl Re
     Ok(reply::reply())
 }
 
-pub(crate) async fn get_tags(filter: NotesFilter, conn: Db) -> Result<impl Reply, Rejection> {
-    let conn = conn.lock().map_err(|e| DbError::reject(e))?;
-
-    let limit = if let Some(l) = filter.limit {
-        l
-    } else {
-        i64::MAX
-    };
-
-    Ok(reply::json(
-        &tags
-            .limit(limit)
-            .load::<Tag>(&*conn)
-            .map_err(|_| NotFound::reject())?,
-    ))
-}
-
-pub(crate) async fn get_tag(id: i32, conn: Db) -> Result<impl Reply, Rejection> {
-    use schema::tags::dsl::*;
-    let conn = conn.lock().map_err(|e| DbError::reject(e))?;
-
-    Ok(reply::json(
-        &tags
-            .filter(tag_id.eq(id))
-            .first::<Tag>(&*conn)
-            .map_err(|_| NotFound::reject())?,
-    ))
-}
-
-pub(crate) async fn put_tag(id: i32, tag: Tag, conn: Db) -> Result<impl Reply, Rejection> {
-    use schema::tags::dsl::*;
-    if id != tag.tag_id {
-        return Err(InvalidPayload::reject(
-            "tag_id does not match id from url path",
-        ));
-    }
-
-    let conn = conn.lock().map_err(|e| DbError::reject(e))?;
-
-    insert_into(tags)
-        .values((tag_id.eq(tag.tag_id), name.eq(&tag.name)))
-        .execute(&*conn)
-        .map_err(|e| InvalidPayload::reject(e))?;
-
-    Ok(reply::json(&tag))
-}
-
-pub(crate) async fn delete_tag(id: i32, conn: Db) -> Result<impl Reply, Rejection> {
-    use schema::tags::dsl::*;
-    let conn = conn.lock().map_err(|e| DbError::reject(e))?;
-
-    delete(tags.filter(tag_id.eq(id)))
-        .execute(&*conn)
-        .map_err(|e| InvalidPayload::reject(e))?;
-
-    Ok(reply::reply())
-}
-
 pub(crate) async fn tag_note(
     note_id_: i32,
     tag_id_: i32,
@@ -190,7 +115,10 @@ pub(crate) async fn untag_note(
 }
 
 pub(crate) async fn get_note_tags(note_id_: i32, conn: Db) -> Result<impl Reply, Rejection> {
+    use crate::models::Tag;
     use schema::notes_tags::dsl::*;
+    use schema::tags::dsl::tags;
+
     let conn = conn.lock().map_err(|e| DbError::reject(e))?;
 
     let tag_ids = notes_tags
@@ -205,25 +133,4 @@ pub(crate) async fn get_note_tags(note_id_: i32, conn: Db) -> Result<impl Reply,
             .load::<Tag>(&*conn)
             .map_err(|_| NotFound::reject())?,
     ))
-}
-
-pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
-    use schema::notes::dsl::*;
-    let conn = conn.lock().map_err(|e| DbError::reject(e))?;
-
-    let _notes = notes.load::<Note>(&*conn).map_err(|_| NotFound::reject())?;
-
-    let body = Index::new(_notes);
-
-    let html = HtmlContext::builder()
-        .lang("en")
-        .title("Notor - index")
-        .add_meta("viewport", "width=device-width, initial-scale=1")
-        .body(body)
-        .build()
-        .map_err(|e| InternalError::reject(e))?
-        .as_html()
-        .map_err(|e| InternalError::reject(e))?;
-
-    Ok(reply::html(html))
 }
