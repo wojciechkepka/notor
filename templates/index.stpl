@@ -1,3 +1,4 @@
+<h1>Notes:</h1>
 <table>
     <tr>
         <th>Id</th>
@@ -8,9 +9,20 @@
     <tr>
         <td><%= note.note_id %></td>
         <td><%= note.title %></td>
+        <td><button onclick="deleteNote(<%= note.note_id %>).then(() => { location.reload(); });">DELETE</button></td>
     </tr>
 
 <% } %>
 
 </table>
 
+
+<h2>Add a note</h2>
+<p id="newNoteErr"></p>
+<form id="newNote">
+    <label for="title">Title:</label><br>
+    <input type="text" id="title" name="title"><br>
+    <label for="content">Content:</label><br>
+    <input type="text" id="content" name="content"><br>
+    <input type="submit" value="add_note">
+</form>
