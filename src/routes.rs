@@ -90,6 +90,13 @@ pub fn ro_delete_tag(db: Db) -> impl Filter<Extract = impl Reply, Error = Reject
         .and_then(delete_tag)
 }
 
+pub fn ro_get_web(db: Db) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("web")
+        .and(warp::get())
+        .and(with_db(db))
+        .and_then(get_web)
+}
+
 pub fn routes(db: Db) -> impl Filter<Extract = impl Reply, Error = Infallible> + Clone {
     let notes_routes = ro_get_notes(db.clone())
         .or(ro_get_note(db.clone()))
@@ -105,8 +112,11 @@ pub fn routes(db: Db) -> impl Filter<Extract = impl Reply, Error = Infallible> +
         .or(ro_put_tag(db.clone()))
         .or(ro_delete_tag(db.clone()));
 
+    let web_routes = ro_get_web(db.clone());
+
     let routes = notes_routes
         .or(tags_routes)
+        .or(web_routes)
         .recover(handle_rejection)
         .with(warp::log::log("route::notes"));
 

@@ -1,8 +1,10 @@
 use super::models::Db;
 use super::models::Note;
 use super::models::Tag;
-use super::rejections::{DbError, InvalidPayload, NotFound};
 use super::schema;
+use crate::html::HtmlContext;
+use crate::rejections::*;
+use crate::web::Index;
 use diesel::delete;
 use diesel::insert_into;
 use diesel::prelude::*;
@@ -203,4 +205,25 @@ pub(crate) async fn get_note_tags(note_id_: i32, conn: Db) -> Result<impl Reply,
             .load::<Tag>(&*conn)
             .map_err(|_| NotFound::reject())?,
     ))
+}
+
+pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
+    use schema::notes::dsl::*;
+    let conn = conn.lock().map_err(|e| DbError::reject(e))?;
+
+    let _notes = notes.load::<Note>(&*conn).map_err(|_| NotFound::reject())?;
+
+    let body = Index::new(_notes);
+
+    let html = HtmlContext::builder()
+        .lang("en")
+        .title("Notor - index")
+        .add_meta("viewport", "width=device-width, initial-scale=1")
+        .body(body)
+        .build()
+        .map_err(|e| InternalError::reject(e))?
+        .as_html()
+        .map_err(|e| InternalError::reject(e))?;
+
+    Ok(reply::html(html))
 }

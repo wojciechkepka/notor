@@ -1,0 +1,17 @@
+<head>
+
+    <title> <%= title %> </title>
+    <meta charset="<%= charset.as_ref().to_string() %>">
+    <% for tag in meta_tags.iter() { %>
+    <meta name="<%= *tag.name %>" content="<%= *tag.content %>">
+    <% } %>
+
+    <% for style in styles.iter() { %>
+    <link rel="stylesheet" href="<%= *style %>">
+    <% } %>
+
+    <% for script_src in scripts.iter() { %>
+    <script src="<%= *script_src %>"></script>
+    <% } %>
+
+</head>

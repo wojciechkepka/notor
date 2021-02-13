@@ -1,4 +1,5 @@
 use super::models::ErrReply;
+use sailfish::RenderError;
 use std::convert::Infallible;
 use warp::body::BodyDeserializeError;
 use warp::http::StatusCode;
@@ -31,6 +32,15 @@ impl DbError {
     }
 }
 
+#[derive(Debug)]
+pub(crate) struct InternalError(String);
+impl reject::Reject for InternalError {}
+impl InternalError {
+    pub(crate) fn reject<S: ToString>(message: S) -> Rejection {
+        reject::custom(InternalError(message.to_string()))
+    }
+}
+
 pub(crate) async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
     let mut code = StatusCode::INTERNAL_SERVER_ERROR;
     let mut message = format!("Unhandled rejection {:?}", err);
@@ -47,6 +57,9 @@ pub(crate) async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infal
     } else if let Some(deserialize) = err.find::<BodyDeserializeError>() {
         code = StatusCode::BAD_REQUEST;
         message = deserialize.to_string();
+    } else if let Some(render) = err.find::<RenderError>() {
+        code = StatusCode::INTERNAL_SERVER_ERROR;
+        message = render.to_string();
     }
 
     Ok(reply::with_status(
