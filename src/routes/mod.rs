@@ -32,7 +32,7 @@ pub fn routes(db: Db) -> impl Filter<Extract = impl Reply, Error = Infallible> +
         .or(ro_put_tag(db.clone()))
         .or(ro_delete_tag(db.clone()));
 
-    let web_routes = ro_get_web(db.clone());
+    let web_routes = ro_get_web(db.clone()).or(ro_web_note(db.clone()));
 
     let routes = notes_routes
         .or(tags_routes)

@@ -16,3 +16,27 @@ impl Index {
         Index { notes }
     }
 }
+
+#[derive(Debug, Serialize, TemplateOnce)]
+#[template(path = "note.stpl")]
+pub struct NoteView {
+    note: Note,
+}
+
+impl Default for NoteView {
+    fn default() -> Self {
+        NoteView {
+            note: Note {
+                note_id: 0,
+                title: "Error".to_string(),
+                content: Some("missing note".to_string()),
+            },
+        }
+    }
+}
+
+impl NoteView {
+    pub fn new(note: Note) -> Self {
+        NoteView { note }
+    }
+}

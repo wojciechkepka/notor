@@ -1,0 +1,9 @@
+<button onclick="window.location.href = '/web'">GO BACK</button>
+<div id="note_view">
+    <h1><%= note.title %></h1>
+    <% if note.content.is_some() { %>
+    <p id="note_content">
+        <%= note.content.unwrap() %>
+    </p>
+    <% } %>
+</div>
