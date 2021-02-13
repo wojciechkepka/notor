@@ -23,7 +23,7 @@ pub fn ro_get_note(db: Db) -> impl Filter<Extract = impl Reply, Error = Rejectio
         .and_then(get_note)
 }
 pub fn ro_put_note(db: Db) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("notes" / i32)
+    warp::path!("notes")
         .and(warp::put())
         .and(body::json())
         .and(with_db(db))
@@ -77,7 +77,7 @@ pub fn ro_get_tag(db: Db) -> impl Filter<Extract = impl Reply, Error = Rejection
         .and_then(get_tag)
 }
 pub fn ro_put_tag(db: Db) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("tags" / i32)
+    warp::path!("tags")
         .and(warp::put())
         .and(body::json())
         .and(with_db(db))

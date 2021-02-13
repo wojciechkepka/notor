@@ -1,5 +1,5 @@
 use super::*;
-use crate::models::Note;
+use crate::models::{NewNote, Note};
 
 pub(crate) async fn get_notes(filter: QueryFilter, conn: Db) -> Result<impl Reply, Rejection> {
     use schema::notes::dsl::*;
@@ -31,26 +31,15 @@ pub(crate) async fn get_note(id: i32, conn: Db) -> Result<impl Reply, Rejection>
     ))
 }
 
-pub(crate) async fn put_note(id: i32, note: Note, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn put_note(note: NewNote, conn: Db) -> Result<impl Reply, Rejection> {
     use schema::notes::dsl::*;
-    if id != note.note_id {
-        return Err(InvalidPayload::reject(
-            "note_id does not match id from url path",
-        ));
-    }
-
     let conn = conn.lock().map_err(|e| DbError::reject(e))?;
 
     insert_into(notes)
-        .values((
-            note_id.eq(note.note_id),
-            title.eq(&note.title),
-            content.eq(&note.content),
-        ))
-        .execute(&*conn)
-        .map_err(|e| InvalidPayload::reject(e))?;
-
-    Ok(reply::json(&note))
+        .values((title.eq(&note.title), content.eq(&note.content)))
+        .get_result::<Note>(&*conn)
+        .map(|note| reply::json(&note))
+        .map_err(|e| InvalidPayload::reject(e))
 }
 
 pub(crate) async fn delete_note(id: i32, conn: Db) -> Result<impl Reply, Rejection> {

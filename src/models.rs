@@ -1,3 +1,4 @@
+use crate::schema::{notes, tags};
 use diesel::pg::PgConnection;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -11,9 +12,22 @@ pub struct Note {
     pub content: Option<String>,
 }
 
+#[derive(Insertable, Serialize, Deserialize, Debug)]
+#[table_name = "notes"]
+pub struct NewNote {
+    pub title: String,
+    pub content: Option<String>,
+}
+
 #[derive(Queryable, Serialize, Deserialize, Debug)]
 pub struct Tag {
     pub tag_id: i32,
+    pub name: String,
+}
+
+#[derive(Insertable, Serialize, Deserialize, Debug)]
+#[table_name = "tags"]
+pub struct NewTag {
     pub name: String,
 }
 
