@@ -1,7 +1,7 @@
 use super::*;
-use crate::models::Note;
 use crate::html::HtmlContext;
-use crate::web::Index;
+use crate::models::Note;
+use crate::web::{Index, INDEX_SCRIPT, INDEX_STYLE};
 
 pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
     use schema::notes::dsl::*;
@@ -15,6 +15,8 @@ pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
         .lang("en")
         .title("Notor - index")
         .add_meta("viewport", "width=device-width, initial-scale=1")
+        .add_script(std::str::from_utf8(INDEX_SCRIPT).map_err(|e| InternalError::reject(e))?)
+        .add_style(std::str::from_utf8(INDEX_STYLE).map_err(|e| InternalError::reject(e))?)
         .body(body)
         .build()
         .map_err(|e| InternalError::reject(e))?
