@@ -1,4 +1,5 @@
 <h1>Notes:</h1>
+<p id="errBox"></p>
 <table>
     <tr>
         <th>Id</th>
@@ -9,7 +10,7 @@
     <tr>
         <td><%= note.note_id %></td>
         <td><%= note.title %></td>
-        <td><button onclick="deleteNote(<%= note.note_id %>).then(() => { location.reload(); });">DELETE</button></td>
+        <td><button onclick="deleteNote(<%= note.note_id %>);">DELETE</button></td>
     </tr>
 
 <% } %>
@@ -18,7 +19,6 @@
 
 
 <h2>Add a note</h2>
-<p id="newNoteErr"></p>
 <form id="newNote">
     <label for="title">Title:</label><br>
     <input type="text" id="title" name="title"><br>
