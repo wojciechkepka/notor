@@ -1,5 +1,5 @@
 use super::*;
-use crate::models::{NewNote, Note};
+use crate::models::{NewNote, NewTag, Note, Tag};
 use warp::reject;
 
 pub(crate) async fn get_notes(filter: QueryFilter, conn: Db) -> Result<impl Reply, Rejection> {
@@ -49,10 +49,20 @@ pub(crate) async fn update_note(id: i32, note: NewNote, conn: Db) -> Result<impl
 
 pub(crate) async fn tag_note(
     note_id_: i32,
-    tag_id_: i32,
+    tag: String,
     conn: Db,
 ) -> Result<impl Reply, Rejection> {
     let conn = lock_db(&conn)?;
+
+    let tag_id_ = match Tag::search(&tag, &conn)
+        .map_err(RejectError::from)
+        .map_err(reject::custom)?
+    {
+        Some(id) => Ok(id),
+        None => Tag::save(&NewTag { name: tag }, &conn).map(|tag| tag.tag_id),
+    }
+    .map_err(RejectError::from)
+    .map_err(reject::custom)?;
 
     Note::tag(note_id_, tag_id_, &conn)
         .map(|_| reply::reply())

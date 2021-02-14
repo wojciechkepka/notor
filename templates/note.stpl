@@ -1,9 +1,21 @@
 <button onclick="window.location.href = '/web'">GO BACK</button>
 <div id="note_view">
     <h1><%= note.title %></h1>
+    <p id="errBox"></p>
+
+    <% for tag in note_tags.iter() { %>
+    <span class="note_tag"><%= *tag.name %></span>
+    <% } %>
+
     <% if note.content.is_some() { %>
     <p id="note_content">
         <%= note.content.unwrap() %>
     </p>
     <% } %>
+
+    <form id="addTagForm">
+        <label for="title">Tag:</label><br>
+        <input type="text" id="tag" name="tag"><br>
+        <input type="submit" value="ADD">
+    </form>
 </div>

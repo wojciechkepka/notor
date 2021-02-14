@@ -40,7 +40,7 @@ pub(crate) fn ro_update_note(
 }
 
 pub(crate) fn ro_tag_note(db: Db) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("notes" / i32 / "tags" / i32)
+    warp::path!("notes" / i32 / "tags" / String)
         .and(warp::post())
         .and(with_db(db))
         .and_then(tag_note)

@@ -1,18 +1,30 @@
 <h1>Notes:</h1>
 <p id="errBox"></p>
+
+<% if notes.len() > 0 { %>
 <table>
     <tr>
         <th>Id</th>
         <th>Title</th>
+        <%# <th>Tags</th> %>
+        <th></th>
     </tr>
 <% for note in notes.iter() { %>
 
     <tr>
         <td><%= note.note_id %></td>
         <td><a href="/web/notes/<%= note.note_id %>"><%= note.title %></a></td>
+        <%# <td>
+        <%# <% for tag in note_tags.iter() { %>
+        <%# <span class="note_tag"><%= *tag.name %></span>
+        <%# <% } %>
+        <%# </td>%>
         <td><button onclick="deleteNote(<%= note.note_id %>);">DELETE</button></td>
     </tr>
 
+<% } %>
+<% } else { %>
+<p>No notes available... Add a note below.</p>
 <% } %>
 
 </table>
@@ -23,6 +35,6 @@
     <label for="title">Title:</label><br>
     <input type="text" id="title" name="title"><br>
     <label for="content">Content:</label><br>
-    <input type="text" id="content" name="content"><br>
+    <textarea id="content" name="content" placeholder="Enter your note here..."></textarea><br>
     <input type="submit" value="ADD">
 </form>

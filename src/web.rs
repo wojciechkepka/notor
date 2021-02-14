@@ -1,4 +1,4 @@
-use crate::models::Note;
+use crate::models::{Note, Tag};
 use sailfish::TemplateOnce;
 use serde::Serialize;
 
@@ -21,6 +21,7 @@ impl Index {
 #[template(path = "note.stpl")]
 pub struct NoteView {
     note: Note,
+    pub note_tags: Vec<Tag>,
 }
 
 impl Default for NoteView {
@@ -31,12 +32,16 @@ impl Default for NoteView {
                 title: "Error".to_string(),
                 content: Some("missing note".to_string()),
             },
+            note_tags: vec![],
         }
     }
 }
 
 impl NoteView {
     pub fn new(note: Note) -> Self {
-        NoteView { note }
+        NoteView {
+            note,
+            note_tags: vec![],
+        }
     }
 }

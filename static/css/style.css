@@ -3,3 +3,7 @@
     color: red;
     font-size: 14px;
 }
+
+.note_tag {
+  border: 1px solid black;
+}

@@ -55,7 +55,10 @@ pub(crate) async fn get_web_note(id: i32, conn: Db) -> Result<impl Reply, Reject
         .map_err(reject::custom)?;
 
     let page_title = note.title.clone();
-    let view = NoteView::new(note);
+    let mut view = NoteView::new(note);
+    view.note_tags = Note::tags(id, &conn)
+        .map_err(RejectError::from)
+        .map_err(reject::custom)?;
 
     let html = html_from(view, page_title, INDEX_SCRIPT, INDEX_STYLE)?;
 

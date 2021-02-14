@@ -31,6 +31,19 @@ impl Note {
         notes.limit(limit).load::<Note>(&*conn)
     }
 
+    //pub fn load_notes_with_tags(filter: QueryFilter, conn: &DbConn) -> Result<Vec<i32>, DbErr> {
+    //use schema::notes_tags::dsl::*;
+
+    //let limit = if let Some(l) = filter.limit {
+    //l
+    //} else {
+    //i64::MAX
+    //};
+
+    //let note_ids = notes::table.select(notes::note_id);
+
+    //}
+
     pub fn load(id: i32, conn: &DbConn) -> Result<Note, DbErr> {
         use schema::notes::dsl::*;
         notes.filter(note_id.eq(id)).first::<Note>(&*conn)
@@ -128,6 +141,18 @@ impl Tag {
         use schema::tags::dsl::*;
 
         delete(tags.filter(tag_id.eq(id))).execute(&*conn)
+    }
+
+    pub fn search<S: AsRef<str>>(tag: S, conn: &DbConn) -> Result<Option<i32>, DbErr> {
+        use schema::tags::dsl::*;
+
+        match tags.filter(name.eq(tag.as_ref())).first::<Tag>(&*conn) {
+            Ok(tag) => Ok(Some(tag.tag_id)),
+            Err(e) => match e {
+                diesel::result::Error::NotFound => Ok(None),
+                e => Err(e),
+            },
+        }
     }
 }
 
