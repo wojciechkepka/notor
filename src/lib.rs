@@ -2,6 +2,7 @@
 extern crate diesel;
 
 pub mod db;
+pub(crate) mod filters;
 mod handlers;
 pub(crate) mod html;
 mod models;

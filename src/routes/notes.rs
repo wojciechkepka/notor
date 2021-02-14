@@ -1,5 +1,5 @@
 use super::*;
-use crate::handlers::{notes::*, QueryFilter};
+use crate::handlers::notes::*;
 
 pub(crate) fn ro_get_notes(db: Db) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("notes")

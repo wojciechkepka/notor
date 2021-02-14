@@ -1,5 +1,5 @@
 use super::*;
-use crate::handlers::{tags::*, QueryFilter};
+use crate::handlers::tags::*;
 
 pub(crate) fn ro_get_tags(db: Db) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("tags")
