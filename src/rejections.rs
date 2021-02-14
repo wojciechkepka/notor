@@ -9,7 +9,7 @@ use warp::{reject, reply, Rejection, Reply};
 pub(crate) struct NotFound;
 impl reject::Reject for NotFound {}
 impl NotFound {
-    pub(crate) fn reject() -> Rejection {
+    pub(crate) fn reject<T>(_: T) -> Rejection {
         reject::custom(NotFound)
     }
 }

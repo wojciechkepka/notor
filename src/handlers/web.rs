@@ -24,10 +24,9 @@ where
 }
 
 pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
-    use schema::notes::dsl::*;
     let conn = conn.lock().map_err(|e| DbError::reject(e))?;
 
-    let _notes = notes.load::<Note>(&*conn).map_err(|_| NotFound::reject())?;
+    let _notes = Note::load_notes(QueryFilter::default(), &conn).map_err(NotFound::reject)?;
 
     let body = Index::new(_notes);
 
@@ -37,13 +36,9 @@ pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
 }
 
 pub(crate) async fn get_web_note(id: i32, conn: Db) -> Result<impl Reply, Rejection> {
-    use schema::notes::dsl::*;
     let conn = conn.lock().map_err(|e| DbError::reject(e))?;
 
-    let note = notes
-        .filter(note_id.eq(id))
-        .first::<Note>(&*conn)
-        .map_err(|_| NotFound::reject())?;
+    let note = Note::load(id, &conn).map_err(NotFound::reject)?;
 
     let page_title = note.title.clone();
     let view = NoteView::new(note);
