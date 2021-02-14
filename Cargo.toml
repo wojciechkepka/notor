@@ -21,3 +21,4 @@ log = "0.4"
 diesel = { version = "1", features = ["postgres", "numeric"] }
 dotenv = "0.15"
 sailfish = { git = "https://github.com/Kogia-sima/sailfish", branch = "master" }
+thiserror = "1"

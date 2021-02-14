@@ -14,19 +14,31 @@ where
         .lang("en")
         .title(format!("Notor - {}", title.as_ref()))
         .add_meta("viewport", "width=device-width, initial-scale=1")
-        .add_script(std::str::from_utf8(script.as_ref()).map_err(InternalError::reject)?)
-        .add_style(std::str::from_utf8(style.as_ref()).map_err(InternalError::reject)?)
+        .add_script(
+            std::str::from_utf8(script.as_ref())
+                .map_err(RejectError::from)
+                .map_err(reject::custom)?,
+        )
+        .add_style(
+            std::str::from_utf8(style.as_ref())
+                .map_err(RejectError::from)
+                .map_err(reject::custom)?,
+        )
         .body(body)
         .build()
-        .map_err(InternalError::reject)?
+        .map_err(RejectError::from)
+        .map_err(reject::custom)?
         .as_html()
-        .map_err(InternalError::reject)
+        .map_err(RejectError::from)
+        .map_err(reject::custom)
 }
 
 pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
-    let conn = conn.lock().map_err(|e| DbError::reject(e))?;
+    let conn = lock_db(&conn)?;
 
-    let _notes = Note::load_notes(QueryFilter::default(), &conn).map_err(NotFound::reject)?;
+    let _notes = Note::load_notes(QueryFilter::default(), &conn)
+        .map_err(RejectError::from)
+        .map_err(reject::custom)?;
 
     let body = Index::new(_notes);
 
@@ -36,9 +48,11 @@ pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
 }
 
 pub(crate) async fn get_web_note(id: i32, conn: Db) -> Result<impl Reply, Rejection> {
-    let conn = conn.lock().map_err(|e| DbError::reject(e))?;
+    let conn = lock_db(&conn)?;
 
-    let note = Note::load(id, &conn).map_err(NotFound::reject)?;
+    let note = Note::load(id, &conn)
+        .map_err(RejectError::from)
+        .map_err(reject::custom)?;
 
     let page_title = note.title.clone();
     let view = NoteView::new(note);
