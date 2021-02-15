@@ -229,7 +229,7 @@ WHERE id = $1
     }
 
     pub async fn search<S: AsRef<str>>(tag: S, conn: &DbConn) -> Result<Option<i32>, DbErr> {
-        match sqlx::query!(
+        sqlx::query!(
             "
 SELECT id
 FROM tags
@@ -237,15 +237,9 @@ WHERE name = $1
             ",
             tag.as_ref()
         )
-        .fetch_one(conn)
+        .fetch_optional(conn)
         .await
-        {
-            Ok(record) => Ok(Some(record.id)),
-            Err(e) => match e {
-                sqlx::Error::RowNotFound => Ok(None),
-                e => Err(e),
-            },
-        }
+        .map(|maybe| maybe.map(|record| record.id))
     }
 }
 
