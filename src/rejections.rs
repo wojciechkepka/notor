@@ -9,9 +9,7 @@ use warp::{reject, reply, Rejection, Reply};
 #[derive(Error, Debug)]
 pub(crate) enum RejectError {
     #[error("database error")]
-    DbError(#[from] diesel::result::Error),
-    #[error("database lock failed - `{0}`")]
-    DbConnError(String),
+    DbError(#[from] sqlx::Error),
     #[error("rendering template failed")]
     RenderError(#[from] RenderError),
     #[error("UTF-8 conversion failed")]
@@ -21,18 +19,15 @@ impl reject::Reject for RejectError {}
 
 impl RejectError {
     fn reply(&self) -> (StatusCode, String) {
-        use diesel::result::Error as DieselError;
+        use sqlx::Error::*;
         use RejectError::*;
 
         match self {
             DbError(err) => match err {
-                DieselError::NotFound => (StatusCode::NOT_FOUND, "not found".into()),
-                DieselError::DatabaseError(_, err) => {
-                    (StatusCode::INTERNAL_SERVER_ERROR, err.message().to_string())
-                }
-                e => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+                RowNotFound => (StatusCode::NOT_FOUND, "not found".into()),
+                // #TODO: handle all
+                err => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
             },
-            DbConnError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.clone()),
             RenderError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
             Utf8ConversionError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
         }

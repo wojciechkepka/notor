@@ -1,163 +1,255 @@
+use crate::db::DbConn;
 use crate::filters::QueryFilter;
-use crate::schema::{self, notes, tags};
-use diesel::delete;
-use diesel::insert_into;
-use diesel::prelude::*;
-use diesel::update;
-use diesel::{pg::PgConnection, result::Error as DbErr};
+
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
+use sqlx::Error as DbErr;
 
-pub type DbConn = PgConnection;
-pub type Db = Arc<Mutex<DbConn>>;
+pub type NoteWithTags = (Note, Vec<Tag>);
 
-#[derive(Queryable, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Note {
-    pub note_id: i32,
+    pub id: i32,
+    pub created: NaiveDateTime,
     pub title: String,
     pub content: Option<String>,
 }
 
 impl Note {
-    pub fn load_notes(filter: QueryFilter, conn: &DbConn) -> Result<Vec<Note>, DbErr> {
-        use schema::notes::dsl::*;
-
+    pub async fn load_notes(filter: QueryFilter, conn: &DbConn) -> Result<Vec<Note>, DbErr> {
         let limit = if let Some(l) = filter.limit {
             l
         } else {
             i64::MAX
         };
 
-        notes.limit(limit).load::<Note>(&*conn)
+        sqlx::query_as!(
+            Note,
+            "
+SELECT *
+FROM notes
+ORDER BY id
+LIMIT $1
+            ",
+            limit
+        )
+        .fetch_all(conn)
+        .await
     }
 
-    //pub fn load_notes_with_tags(filter: QueryFilter, conn: &DbConn) -> Result<Vec<i32>, DbErr> {
-    //use schema::notes_tags::dsl::*;
+    pub async fn load_notes_with_tags(
+        filter: QueryFilter,
+        conn: &DbConn,
+    ) -> Result<Vec<NoteWithTags>, DbErr> {
+        let mut notes_with_tags = Vec::new();
+        for note in Note::load_notes(filter, &conn).await? {
+            let tags = Note::tags(note.id, &conn).await?;
 
-    //let limit = if let Some(l) = filter.limit {
-    //l
-    //} else {
-    //i64::MAX
-    //};
+            notes_with_tags.push((note, tags));
+        }
 
-    //let note_ids = notes::table.select(notes::note_id);
-
-    //}
-
-    pub fn load(id: i32, conn: &DbConn) -> Result<Note, DbErr> {
-        use schema::notes::dsl::*;
-        notes.filter(note_id.eq(id)).first::<Note>(&*conn)
+        Ok(notes_with_tags)
     }
 
-    pub fn save(note: &NewNote, conn: &DbConn) -> Result<Note, DbErr> {
-        use schema::notes::dsl::*;
-        insert_into(notes)
-            .values((title.eq(&note.title), content.eq(&note.content)))
-            .get_result::<Note>(&*conn)
+    pub async fn load(id: i32, conn: &DbConn) -> Result<Note, DbErr> {
+        sqlx::query_as!(
+            Note,
+            "
+SELECT *
+FROM notes
+WHERE id = $1
+            ",
+            id
+        )
+        .fetch_one(conn)
+        .await
     }
 
-    pub fn delete(id: i32, conn: &DbConn) -> Result<usize, DbErr> {
-        use schema::notes::dsl::*;
-        delete(notes.filter(note_id.eq(id))).execute(&*conn)
+    pub async fn save(note: &NewNote, conn: &DbConn) -> Result<Note, DbErr> {
+        sqlx::query_as!(
+            Note,
+            "
+INSERT INTO notes ( created, title, content )
+VALUES ( $1, $2, $3 )
+RETURNING *
+            ",
+            chrono::offset::Utc::now().naive_utc(),
+            note.title,
+            note.content
+        )
+        .fetch_one(conn)
+        .await
     }
 
-    pub fn update(id: i32, new_note: &NewNote, conn: &DbConn) -> Result<usize, DbErr> {
-        use schema::notes::dsl::*;
-
-        update(notes)
-            .filter(note_id.eq(id))
-            .set((title.eq(&new_note.title), content.eq(&new_note.content)))
-            .execute(&*conn)
+    pub async fn delete(id: i32, conn: &DbConn) -> Result<(), DbErr> {
+        sqlx::query!(
+            "
+DELETE FROM notes
+WHERE id = $1
+            ",
+            id
+        )
+        .execute(conn)
+        .await
+        .map(|_| ())
     }
 
-    pub fn tag(note_id_: i32, tag_id_: i32, conn: &DbConn) -> Result<usize, DbErr> {
-        use schema::notes_tags::dsl::*;
-
-        insert_into(notes_tags)
-            .values((note_id.eq(note_id_), tag_id.eq(tag_id_)))
-            .execute(&*conn)
+    pub async fn update(id: i32, new_note: &NewNote, conn: &DbConn) -> Result<(), DbErr> {
+        sqlx::query!(
+            "
+UPDATE notes
+SET ( title, content ) = ( $1, $2 )
+WHERE id = $3
+            ",
+            new_note.title,
+            new_note.content,
+            id
+        )
+        .execute(conn)
+        .await
+        .map(|_| ())
     }
 
-    pub fn untag(note_id_: i32, tag_id_: i32, conn: &DbConn) -> Result<usize, DbErr> {
-        use schema::notes_tags::dsl::*;
-
-        delete(notes_tags.filter(tag_id.eq(tag_id_).and(note_id.eq(note_id_)))).execute(&*conn)
+    pub async fn tag(note_id: i32, tag_id: i32, conn: &DbConn) -> Result<(), DbErr> {
+        sqlx::query!(
+            "
+INSERT INTO notes_tags ( note_id, tag_id )
+VALUES ( $1, $2 )
+            ",
+            note_id,
+            tag_id
+        )
+        .execute(conn)
+        .await
+        .map(|_| ())
     }
 
-    pub fn tags(note_id_: i32, conn: &DbConn) -> Result<Vec<Tag>, DbErr> {
-        use schema::notes_tags::dsl::*;
-        use schema::tags::dsl::tags;
+    pub async fn untag(note_id: i32, tag_id: i32, conn: &DbConn) -> Result<(), DbErr> {
+        sqlx::query!(
+            "
+DELETE FROM notes_tags
+WHERE note_id = $1 AND tag_id = $2
+            ",
+            note_id,
+            tag_id
+        )
+        .execute(conn)
+        .await
+        .map(|_| ())
+    }
 
-        let tag_ids = notes_tags
-            .filter(note_id.eq(note_id_))
-            .select(tag_id)
-            .load::<i32>(&*conn)?;
-
-        tags.filter(schema::tags::tag_id.eq_any(tag_ids))
-            .load::<Tag>(&*conn)
+    pub async fn tags(note_id: i32, conn: &DbConn) -> Result<Vec<Tag>, DbErr> {
+        sqlx::query_as!(
+            Tag,
+            "
+SELECT id, name
+FROM tags
+INNER JOIN notes_tags AS nt ON nt.tag_id = tags.id
+WHERE nt.note_id = $1
+            ",
+            note_id
+        )
+        .fetch_all(conn)
+        .await
     }
 }
 
-#[derive(Insertable, Serialize, Deserialize, Debug)]
-#[table_name = "notes"]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct NewNote {
     pub title: String,
     pub content: Option<String>,
 }
 
-#[derive(Queryable, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Tag {
-    pub tag_id: i32,
+    pub id: i32,
     pub name: String,
 }
 
 impl Tag {
-    pub fn load_tags(filter: QueryFilter, conn: &DbConn) -> Result<Vec<Tag>, DbErr> {
-        use schema::tags::dsl::*;
+    pub async fn load_tags(filter: QueryFilter, conn: &DbConn) -> Result<Vec<Tag>, DbErr> {
         let limit = if let Some(l) = filter.limit {
             l
         } else {
             i64::MAX
         };
 
-        tags.limit(limit).load::<Tag>(&*conn)
+        sqlx::query_as!(
+            Tag,
+            "
+SELECT *
+FROM tags
+LIMIT $1
+            ",
+            limit
+        )
+        .fetch_all(conn)
+        .await
     }
 
-    pub fn load(id: i32, conn: &DbConn) -> Result<Tag, DbErr> {
-        use schema::tags::dsl::*;
-
-        tags.filter(tag_id.eq(id)).first::<Tag>(&*conn)
+    pub async fn load(id: i32, conn: &DbConn) -> Result<Tag, DbErr> {
+        sqlx::query_as!(
+            Tag,
+            "
+SELECT *
+FROM tags
+WHERE id = $1
+            ",
+            id
+        )
+        .fetch_one(conn)
+        .await
     }
 
-    pub fn save(tag: &NewTag, conn: &DbConn) -> Result<Tag, DbErr> {
-        use schema::tags::dsl::*;
-
-        insert_into(tags)
-            .values(name.eq(&tag.name))
-            .get_result::<Tag>(&*conn)
+    pub async fn save(tag: &NewTag, conn: &DbConn) -> Result<Tag, DbErr> {
+        sqlx::query_as!(
+            Tag,
+            "
+INSERT INTO tags ( name )
+VALUES ( $1 )
+RETURNING *
+            ",
+            tag.name,
+        )
+        .fetch_one(conn)
+        .await
     }
 
-    pub fn delete(id: i32, conn: &DbConn) -> Result<usize, DbErr> {
-        use schema::tags::dsl::*;
-
-        delete(tags.filter(tag_id.eq(id))).execute(&*conn)
+    pub async fn delete(id: i32, conn: &DbConn) -> Result<(), DbErr> {
+        sqlx::query!(
+            "
+DELETE FROM tags
+WHERE id = $1
+            ",
+            id
+        )
+        .execute(conn)
+        .await
+        .map(|_| ())
     }
 
-    pub fn search<S: AsRef<str>>(tag: S, conn: &DbConn) -> Result<Option<i32>, DbErr> {
-        use schema::tags::dsl::*;
-
-        match tags.filter(name.eq(tag.as_ref())).first::<Tag>(&*conn) {
-            Ok(tag) => Ok(Some(tag.tag_id)),
+    pub async fn search<S: AsRef<str>>(tag: S, conn: &DbConn) -> Result<Option<i32>, DbErr> {
+        match sqlx::query!(
+            "
+SELECT id
+FROM tags
+WHERE name = $1
+            ",
+            tag.as_ref()
+        )
+        .fetch_one(conn)
+        .await
+        {
+            Ok(record) => Ok(Some(record.id)),
             Err(e) => match e {
-                diesel::result::Error::NotFound => Ok(None),
+                sqlx::Error::RowNotFound => Ok(None),
                 e => Err(e),
             },
         }
     }
 }
 
-#[derive(Insertable, Serialize, Deserialize, Debug)]
-#[table_name = "tags"]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct NewTag {
     pub name: String,
 }

@@ -6,20 +6,20 @@
     <tr>
         <th>Id</th>
         <th>Title</th>
-        <%# <th>Tags</th> %>
+        <th>Tags</th>
         <th></th>
     </tr>
-<% for note in notes.iter() { %>
+<% for (note, tags) in notes.iter() { %>
 
     <tr>
-        <td><%= note.note_id %></td>
-        <td><a href="/web/notes/<%= note.note_id %>"><%= note.title %></a></td>
-        <%# <td>
-        <%# <% for tag in note_tags.iter() { %>
-        <%# <span class="note_tag"><%= *tag.name %></span>
-        <%# <% } %>
-        <%# </td>%>
-        <td><button onclick="deleteNote(<%= note.note_id %>);">DELETE</button></td>
+        <td><%= note.id %></td>
+        <td><a href="/web/notes/<%= note.id %>"><%= *note.title %></a></td>
+        <td>
+        <% for tag in tags.iter() { %>
+        <span class="note_tag"><%= *tag.name %></span>
+        <% } %>
+        </td>
+        <td><button onclick="deleteNote(<%= note.id %>);">DELETE</button></td>
     </tr>
 
 <% } %>

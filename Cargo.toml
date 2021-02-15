@@ -18,7 +18,9 @@ warp = "0.3"
 pretty_env_logger = "0.3"
 serde = { version = "1", features = ["derive"] }
 log = "0.4"
-diesel = { version = "1", features = ["postgres", "numeric"] }
+chrono = { version = "0.4", features = ["serde"] }
+sqlx = { version = "0.5.1", features = [ "runtime-tokio-rustls", "postgres", "macros", "chrono" ] }
 dotenv = "0.15"
 sailfish = { git = "https://github.com/Kogia-sima/sailfish", branch = "master" }
 thiserror = "1"
+funty = "=1.1.0"

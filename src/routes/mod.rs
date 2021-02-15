@@ -6,8 +6,8 @@ use std::convert::Infallible;
 use warp::body;
 use warp::{Filter, Rejection, Reply};
 
+use crate::db::Db;
 use crate::filters::QueryFilter;
-use crate::models::Db;
 use crate::rejections::handle_rejection;
 
 use notes::*;

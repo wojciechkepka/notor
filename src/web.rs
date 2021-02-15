@@ -1,4 +1,4 @@
-use crate::models::{Note, Tag};
+use crate::models::{Note, NoteWithTags, Tag};
 use sailfish::TemplateOnce;
 use serde::Serialize;
 
@@ -8,11 +8,11 @@ pub const INDEX_STYLE: &[u8] = include_bytes!("../static/css/style.css");
 #[derive(Default, Debug, Serialize, TemplateOnce)]
 #[template(path = "index.stpl")]
 pub struct Index {
-    notes: Vec<Note>,
+    notes: Vec<NoteWithTags>,
 }
 
 impl Index {
-    pub fn new(notes: Vec<Note>) -> Self {
+    pub fn new(notes: Vec<NoteWithTags>) -> Self {
         Index { notes }
     }
 }
@@ -28,7 +28,8 @@ impl Default for NoteView {
     fn default() -> Self {
         NoteView {
             note: Note {
-                note_id: 0,
+                id: 0,
+                created: chrono::offset::Utc::now().naive_utc(),
                 title: "Error".to_string(),
                 content: Some("missing note".to_string()),
             },

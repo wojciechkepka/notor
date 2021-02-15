@@ -2,7 +2,7 @@
 async fn main() {
     pretty_env_logger::init();
 
-    match notor::db::db_connection() {
+    match notor::db::db_connection().await {
         Ok(conn) => {
             warp::serve(notor::routes(conn))
                 .run(([127, 0, 0, 1], 3693))

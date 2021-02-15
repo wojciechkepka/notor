@@ -34,9 +34,8 @@ where
 }
 
 pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
-    let conn = lock_db(&conn)?;
-
-    let _notes = Note::load_notes(QueryFilter::default(), &conn)
+    let _notes = Note::load_notes_with_tags(QueryFilter::default(), &conn)
+        .await
         .map_err(RejectError::from)
         .map_err(reject::custom)?;
 
@@ -48,15 +47,15 @@ pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
 }
 
 pub(crate) async fn get_web_note(id: i32, conn: Db) -> Result<impl Reply, Rejection> {
-    let conn = lock_db(&conn)?;
-
     let note = Note::load(id, &conn)
+        .await
         .map_err(RejectError::from)
         .map_err(reject::custom)?;
 
     let page_title = note.title.clone();
     let mut view = NoteView::new(note);
     view.note_tags = Note::tags(id, &conn)
+        .await
         .map_err(RejectError::from)
         .map_err(reject::custom)?;
 
