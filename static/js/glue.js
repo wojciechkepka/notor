@@ -1,5 +1,6 @@
 function getBack() {
     window.history.back();
+    location.reload();
 }
 
 function request(method, ep, body = null, json = false) {

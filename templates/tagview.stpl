@@ -1,11 +1,18 @@
-<button onclick="getBack();">GO BACK</button>
+<span id="back_arr" onclick="getBack();">
+<i class="fas fa-chevron-left"></i>
+</span>
 <h1>Notes with tag
-    <span class="note_tag"><a href="/web/tags/<%= tag.id %>"><%= *tag.name %></a></span>
+    <span class="note-tag"><a href="/web/tags/<%= tag.id %>"><%= *tag.name %></a></span>
 </h1>
-<p id="errBox"></p>
+<div class="wrapper">
+<p id="err_box"></p>
 
 <% if notes.len() > 0 { %>
-<table>
+<table class="notes_listing">
+    <colgroup>
+        <col style="width: 30%;" />
+        <col style="width: 70%;" />
+    </colgroup>
     <tr>
         <th>Created</th>
         <th>Title</th>
@@ -14,7 +21,7 @@
 
     <tr>
         <td><%= note.created_datetime() %></td>
-        <td><a href="/web/notes/<%= note.id %>"><%= *note.title %></a></td>
+        <td class="title-col"><a href="/web/notes/<%= note.id %>"><%= *note.title %></a></td>
     </tr>
 
 <% } %>
@@ -23,3 +30,4 @@
 <% } %>
 
 </table>
+</div>

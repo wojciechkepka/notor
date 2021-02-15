@@ -4,6 +4,9 @@ use crate::models::{Note, Tag};
 use crate::web::{Index, NoteView, TagView, INDEX_SCRIPT, INDEX_STYLE};
 use sailfish::TemplateOnce;
 
+const FONT_AWESOME: &str =
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css";
+
 fn html_from<B, T, S>(body: B, title: T, script: S, style: S) -> Result<String, Rejection>
 where
     B: TemplateOnce + Default,
@@ -24,6 +27,7 @@ where
                 .map_err(RejectError::from)
                 .map_err(reject::custom)?,
         )
+        .add_style_src(FONT_AWESOME)
         .body(body)
         .build()
         .map_err(RejectError::from)

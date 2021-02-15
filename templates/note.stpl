@@ -1,25 +1,28 @@
-<button onclick="getBack();">GO BACK</button>
-<div id="note_view">
+<span id="back_arr" onclick="getBack();">
+<i class="fas fa-chevron-left"></i>
+</span>
+<div id="title_with_tags">
     <h1><%= note.title %></h1>
-    <p id="errBox"></p>
-    <p id="created_date">Created at <%= note.created_datetime()%></p>
+    <% for tag in note_tags.iter() { %>
+    <span class="note-tag"><a href="/web/tags/<%= tag.id %>"><%= *tag.name %></a></span>
+    <% } %>
 
-    <div id="note_tags">
-        <span style="fontweight: bold;">Tags:</span>
-        <% for tag in note_tags.iter() { %>
-        <span class="note_tag"><%= *tag.name %></span>
-        <% } %>
-
-        <% if note.content.is_some() { %>
-        <p id="note_content">
-            <%= note.content.unwrap() %>
-        </p>
-        <% } %>
-    </div>
-
-    <form id="addTagForm">
-        <label for="title">Tag:</label><br>
-        <input type="text" id="tag" name="tag"><br>
-        <input type="submit" value="ADD">
-    </form>
 </div>
+<p id="err_box"></p>
+<p id="created_date">Created at <%= note.created_datetime()%></p>
+
+
+<div class="wrapper">
+<% if note.content.is_some() { %>
+<p id="note_content">
+    <%= note.content.unwrap() %>
+</p>
+<% } %>
+</div>
+
+<br>
+<form id="addTagForm">
+    <label for="title">Tag:</label><br>
+    <input type="text" id="tag" name="tag"><br>
+    <input type="submit" value="ADD">
+</form>

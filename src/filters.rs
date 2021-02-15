@@ -19,6 +19,7 @@ pub struct QueryFilterBuilder {
 }
 
 impl QueryFilterBuilder {
+    #[allow(dead_code)]
     pub fn limit(mut self, l: i64) -> Self {
         self.limit = Some(l);
         self
