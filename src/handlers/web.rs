@@ -1,7 +1,7 @@
 use super::*;
 use crate::html::HtmlContext;
-use crate::models::Note;
-use crate::web::{Index, NoteView, INDEX_SCRIPT, INDEX_STYLE};
+use crate::models::{Note, Tag};
+use crate::web::{Index, NoteView, TagView, INDEX_SCRIPT, INDEX_STYLE};
 use sailfish::TemplateOnce;
 
 fn html_from<B, T, S>(body: B, title: T, script: S, style: S) -> Result<String, Rejection>
@@ -58,6 +58,25 @@ pub(crate) async fn get_web_note(id: i32, conn: Db) -> Result<impl Reply, Reject
         .await
         .map_err(RejectError::from)
         .map_err(reject::custom)?;
+
+    let html = html_from(view, page_title, INDEX_SCRIPT, INDEX_STYLE)?;
+
+    Ok(reply::html(html))
+}
+
+pub(crate) async fn get_web_tagview(id: i32, conn: Db) -> Result<impl Reply, Rejection> {
+    let notes = Note::load_notes(QueryFilter::builder().tag(id).build(), &conn)
+        .await
+        .map_err(RejectError::from)
+        .map_err(reject::custom)?;
+
+    let tag = Tag::load(id, &conn)
+        .await
+        .map_err(RejectError::from)
+        .map_err(reject::custom)?;
+
+    let page_title = format!("notes with tag `{}`", &tag.name);
+    let view = TagView::new(tag, notes);
 
     let html = html_from(view, page_title, INDEX_SCRIPT, INDEX_STYLE)?;
 

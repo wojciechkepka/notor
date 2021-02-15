@@ -1,0 +1,25 @@
+<button onclick="getBack();">GO BACK</button>
+<h1>Notes with tag
+    <span class="note_tag"><a href="/web/tags/<%= tag.id %>"><%= *tag.name %></a></span>
+</h1>
+<p id="errBox"></p>
+
+<% if notes.len() > 0 { %>
+<table>
+    <tr>
+        <th>Created</th>
+        <th>Title</th>
+    </tr>
+<% for note in notes.iter() { %>
+
+    <tr>
+        <td><%= note.created_datetime() %></td>
+        <td><a href="/web/notes/<%= note.id %>"><%= *note.title %></a></td>
+    </tr>
+
+<% } %>
+<% } else { %>
+<p>No notes with selected tag available...</p>
+<% } %>
+
+</table>

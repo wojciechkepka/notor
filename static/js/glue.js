@@ -1,3 +1,7 @@
+function getBack() {
+    window.history.back();
+}
+
 function request(method, ep, body = null, json = false) {
     var b = null;
     var h = {};

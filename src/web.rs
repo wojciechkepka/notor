@@ -46,3 +46,16 @@ impl NoteView {
         }
     }
 }
+
+#[derive(Default, Debug, Serialize, TemplateOnce)]
+#[template(path = "tagview.stpl")]
+pub struct TagView {
+    tag: Tag,
+    notes: Vec<Note>,
+}
+
+impl TagView {
+    pub fn new(tag: Tag, notes: Vec<Note>) -> Self {
+        TagView { tag, notes }
+    }
+}

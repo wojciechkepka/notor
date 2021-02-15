@@ -1,7 +1,7 @@
 use crate::db::DbConn;
 use crate::filters::QueryFilter;
 
-use chrono::NaiveDateTime;
+use chrono::{Datelike, NaiveDateTime, Timelike};
 use serde::{Deserialize, Serialize};
 use sqlx::Error as DbErr;
 
@@ -16,6 +16,17 @@ pub struct Note {
 }
 
 impl Note {
+    pub fn created_datetime(&self) -> String {
+        let created = &self.created;
+        format!(
+            "{}-{:02}-{:02} {:02}:{:02}",
+            created.year(),
+            created.month(),
+            created.day(),
+            created.hour(),
+            created.minute()
+        )
+    }
     pub async fn load_notes(filter: QueryFilter, conn: &DbConn) -> Result<Vec<Note>, DbErr> {
         let limit = if let Some(l) = filter.limit {
             l
@@ -23,18 +34,36 @@ impl Note {
             i64::MAX
         };
 
-        sqlx::query_as!(
-            Note,
-            "
-SELECT *
-FROM notes
-ORDER BY id
-LIMIT $1
-            ",
-            limit
-        )
-        .fetch_all(conn)
-        .await
+        if let Some(tag) = filter.tag_id {
+            sqlx::query_as!(
+                Note,
+                "
+    SELECT id, created, title, content
+    FROM notes
+    INNER JOIN notes_tags on notes_tags.note_id = notes.id
+    WHERE notes_tags.tag_id = $1
+    ORDER BY id
+    LIMIT $2
+                ",
+                tag,
+                limit
+            )
+            .fetch_all(conn)
+            .await
+        } else {
+            sqlx::query_as!(
+                Note,
+                "
+    SELECT *
+    FROM notes
+    ORDER BY id
+    LIMIT $1
+                ",
+                limit
+            )
+            .fetch_all(conn)
+            .await
+        }
     }
 
     pub async fn load_notes_with_tags(
@@ -160,7 +189,7 @@ pub struct NewNote {
     pub content: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Tag {
     pub id: i32,
     pub name: String,

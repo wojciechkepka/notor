@@ -4,7 +4,7 @@
 <% if notes.len() > 0 { %>
 <table>
     <tr>
-        <th>Id</th>
+        <th>Created</th>
         <th>Title</th>
         <th>Tags</th>
         <th></th>
@@ -12,11 +12,11 @@
 <% for (note, tags) in notes.iter() { %>
 
     <tr>
-        <td><%= note.id %></td>
+        <td><%= note.created_datetime() %></td>
         <td><a href="/web/notes/<%= note.id %>"><%= *note.title %></a></td>
         <td>
         <% for tag in tags.iter() { %>
-        <span class="note_tag"><%= *tag.name %></span>
+        <span class="note_tag"><a href="/web/tags/<%= tag.id %>"><%= *tag.name %></a></span>
         <% } %>
         </td>
         <td><button onclick="deleteNote(<%= note.id %>);">DELETE</button></td>
