@@ -9,19 +9,21 @@
 <main>
   <div id="title_with_tags">
     <h1><%= note.title %></h1>
-    <% for tag in note_tags.iter() { %>
-    <span class="note-tag">
-      <a href="/web/tags/<%= tag.id %>"><%= *tag.name %></a>
-    </span>
-    <% } %>
+    <div>
+      <% for tag in note_tags.iter() { %>
+      <span class="note-tag">
+        <a href="/web/tags/<%= tag.id %>"><%= *tag.name %></a>
+      </span>
+      <% } %>
+    </div>
   </div>
 
   <p id="err_box"></p>
   <p id="created_date">Created at <%= note.created_datetime()%></p>
 
-  <div class="wrapper">
+  <div id="note_content">
     <% if note.content.is_some() { %>
-    <p id="note_content">
+    <p>
       <%= note.content.unwrap() %>
     </p>
     <% } %>

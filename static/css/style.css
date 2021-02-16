@@ -1,13 +1,14 @@
 :root {
   --darkmode-bg: #181A1B;
+  --darkmode-content-bg: #272B2C;
   --darkmode-text: #D8D4CF;
-  --darkmode-border: #736b5e;
-  /*--main-text: black;*/
+  --darkmode-border: #606A6C;
   --err: #DB504A;
   --warn: #E3B505;
-  --header: #ACC7D2;
+  --ok: #55A572;
+  --header: #A5556D;
   --note-title: #56A3A6;
-  --note-title-hover: #084C61;
+  --note-title-hover: #9DCBCC;
   --tag-hover: #92BCEA;
   --tag-border: #7A93AC;
 }
@@ -52,7 +53,7 @@ h1, h2, h3, h4 {
 }
 
 .note-tag a {
-  color: var(--main-text);
+  color: var(--darkmode-text);
   text-decoration: none;
   padding: 0.5em;
 }
@@ -101,7 +102,11 @@ h1, h2, h3, h4 {
   color: var(--darkmode-text);
 }
 
-.wrapper {
+input {
+  background: var(--darkmode-content-bg);
+}
+
+main {
    width: 80%;
   margin-left: 10%;
   
@@ -110,11 +115,27 @@ h1, h2, h3, h4 {
   display: flex;
   align-items: flex-start;
 }
-#title_with_tags .note-tag {
+
+#title_with_tags div {
   align-self: center;
+  margin-left: 1em;
+}
+
+#title_with_tags .note-tag {
   margin-left: 1em;
 }
 
 #back_arr {
   font-size: 3em;
 }
+
+#note_content {
+  border: 0.1em solid var(--darkmode-border);
+  background: var(--darkmode-content-bg);
+}
+
+#note_content p {
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
