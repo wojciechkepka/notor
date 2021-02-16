@@ -1,6 +1,6 @@
 <header>
   <nav>
-    <span id="back_arr" onclick="getBack();">
+    <span id="back_arr" class="clickable" onclick="getBack();">
       <i class="fas fa-chevron-left"></i>
     </span>
   </nav>
@@ -23,16 +23,16 @@
 
   <div id="note_content">
     <% if note.content.is_some() { %>
-    <p>
-      <%= note.content.unwrap() %>
-    </p>
+    <p><%= note.content.unwrap() %></p>
     <% } %>
   </div>
 
   <br>
-  <form id="addTagForm">
-    <label for="title">Tag:</label><br>
-    <input type="text" id="tag" name="tag"><br>
-    <input type="submit" value="ADD">
+  <form id="add_tag_form" class="input-form">
+    <label>
+      Tag:
+      <input type="text" id="tag" name="tag">
+    </label>
+    <button class="submit-btn clickable ok-hover" type="submit"><i class="fas fa-plus-square"></i></button>
   </form>
 </main>

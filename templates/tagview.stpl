@@ -1,5 +1,5 @@
 <header>
-  <span id="back_arr" onclick="getBack();">
+  <span id="back_arr" class="clickable" onclick="getBack();">
     <i class="fas fa-chevron-left"></i>
   </span>
 </header>

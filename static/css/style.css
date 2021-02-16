@@ -1,4 +1,5 @@
-:root {
+
+  :root {
   --darkmode-bg: #181A1B;
   --darkmode-content-bg: #272B2C;
   --darkmode-text: #D8D4CF;
@@ -23,12 +24,40 @@ h1, h2, h3, h4 {
   color: var(--header);
 }
 
+.input-form label,
+.input-form label input {
+  display: block;
+}
+
+.input-form label input,
+.input-form label textarea {
+  margin-top: 0.4em;
+}
+
+.input-form label input {
+  width: 100%;
+}
+
+.input-form label {
+  color: var(--inp-form-label);
+  font-weight: 470;
+  padding: 0.5em;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
 .err, #err_box {
   color: var(--err);
 }
 
 .bigger, #err_box {
   font-size: 1.8em;
+}
+
+.ok-hover:hover i{
+  color: var(--ok);
 }
 
 .err-hover:hover i{
@@ -42,10 +71,6 @@ h1, h2, h3, h4 {
 .icon-col a {
   width: 100%;
   display: block;
-}
-
-.icon-col:hover, #back_arr:hover {
-  cursor: pointer;
 }
 
 .note-tag {
@@ -63,7 +88,7 @@ h1, h2, h3, h4 {
   color: var(--tag-hover);
 }
 
-.notes_listing {
+.notes_listing, #content {
   width: 100%;
 }
 
@@ -102,7 +127,12 @@ h1, h2, h3, h4 {
   color: var(--darkmode-text);
 }
 
-input {
+.submit-btn {
+  border: none;
+  font-size: 2em;
+}
+
+input, textarea {
   background: var(--darkmode-content-bg);
 }
 
@@ -139,3 +169,6 @@ main {
   padding-right: 1em;
 }
 
+#content {
+  resize: none;
+}

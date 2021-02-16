@@ -20,10 +20,10 @@
         <span class="note-tag"><a href="/web/tags/<%= tag.id %>"><%= *tag.name %></a></span>
         <% } %>
       </td>
-      <td class="icon-col err-hover" onclick="deleteNote(<%= note.id %>);">
+      <td class="icon-col clickable err-hover" onclick="deleteNote(<%= note.id %>);">
         <i class="fas fa-minus"></i>
       </td>
-      <td class="icon-col warn-hover">
+      <td class="icon-col clickable warn-hover">
         <a href="/web/notes/<%= note.id %>">
           <i class="fas fa-edit"></i>
         </a>
@@ -38,12 +38,16 @@
   </table>
 
   <h2>Add a note</h2>
-  <form id="newNote">
-    <label for="title">Title:</label><br>
-    <input type="text" id="title" name="title"><br>
-    <label for="content">Content:</label><br>
-    <textarea id="content" name="content" placeholder="Enter your note here..."></textarea><br>
-    <input type="submit" value="ADD">
+  <form id="new_note" class="input-form">
+    <label>
+      Title:
+      <input type="text" id="title" name="title">
+    </label>
+    <label>
+      Content:
+      <textarea id="content" name="content" placeholder="Enter your note here..."></textarea>
+    </label>
+    <button class="submit-btn clickable ok-hover" type="submit"><i class="fas fa-plus-square"></i></button>
   </form>
 
 </main>

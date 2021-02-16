@@ -70,12 +70,12 @@ async function tagNote(event) {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    var newNote = document.querySelector("#newNote");
+    var newNote = document.querySelector("#new_note");
     if (newNote) {
         newNote.addEventListener("submit", addNewNote);
     }
 
-    var addTag = document.querySelector("#addTagForm");
+    var addTag = document.querySelector("#add_tag_form");
     if (addTag) {
         addTag.addEventListener("submit", tagNote);
     }
