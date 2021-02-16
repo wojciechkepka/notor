@@ -55,10 +55,6 @@ async function addNewNote(event) {
     await displayErrOrReload(response);
 }
 
-function noteId() {
-
-}
-
 async function tagNote(event) {
     event.preventDefault();
     const data = new FormData(event.target);

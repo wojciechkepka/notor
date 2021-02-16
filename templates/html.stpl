@@ -1,13 +1,17 @@
 <!doctype html>
 <html lang="<%= lang %>">
 
-<%- head %>
+  <head>
 
-<body>
+  <%- head %>
 
-<%- body %>
+  </head>
 
-</body>
+  <body>
+
+  <%- body %>
+
+  </body>
 
 </html>
 

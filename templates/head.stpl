@@ -1,28 +1,26 @@
-<head>
+<title> <%= title %> </title>
+<meta charset="<%= charset.as_ref().to_string() %>">
 
-    <title> <%= title %> </title>
-    <meta charset="<%= charset.as_ref().to_string() %>">
-    <% for tag in meta_tags.iter() { %>
-    <meta name="<%= *tag.name %>" content="<%= *tag.content %>">
-    <% } %>
+<% for tag in meta_tags.iter() { %>
+<meta name="<%= *tag.name %>" content="<%= *tag.content %>">
+<% } %>
 
-    <% for style_src in style_srcs.iter() { %>
-    <link rel="stylesheet" href="<%= *style_src %>">
-    <% } %>
+<% for style_src in style_srcs.iter() { %>
+<link rel="stylesheet" href="<%= *style_src %>">
+<% } %>
 
-    <% for script_src in script_srcs.iter() { %>
-    <script src="<%= *script_src %>"></script>
-    <% } %>
+<% for script_src in script_srcs.iter() { %>
+<script src="<%= *script_src %>"></script>
+<% } %>
 
-    <% for script in scripts.iter() { %>
-    <script>
-        <%- script %>
-    </script>
-    <% } %>
+<% for script in scripts.iter() { %>
+<script>
+  <%- script %>
+</script>
+<% } %>
 
-    <% for style in styles.iter() { %>
-    <style>
-        <%- style %>
-    </style>
-    <% } %>
-</head>
+<% for style in styles.iter() { %>
+<style>
+  <%- style %>
+</style>
+<% } %>

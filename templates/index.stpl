@@ -1,45 +1,49 @@
-<h1>Notes:</h1>
+<main>
+  <h1>Notes:</h1>
 
-<div class="wrapper">
-<p id="err_box"></p>
+  <p id="err_box"></p>
 
-<% if notes.len() > 0 { %>
-<table class="notes_listing">
+  <% if notes.len() > 0 { %>
+  <table class="notes_listing">
     <tr>
-        <th>Created</th>
-        <th>Title</th>
-        <th>Tags</th>
-        <th></th>
+      <th>Created</th>
+      <th>Title</th>
+      <th>Tags</th>
+      <th></th>
     </tr>
-<% for (note, tags) in notes.iter() { %>
-
+  <% for (note, tags) in notes.iter() { %>
     <tr>
-        <td><%= note.created_datetime() %></td>
-        <td class="title-col"><a href="/web/notes/<%= note.id %>"><%= *note.title %></a></td>
-        <td>
+      <td><%= note.created_datetime() %></td>
+      <td class="title-col"><a href="/web/notes/<%= note.id %>"><%= *note.title %></a></td>
+      <td>
         <% for tag in tags.iter() { %>
         <span class="note-tag"><a href="/web/tags/<%= tag.id %>"><%= *tag.name %></a></span>
         <% } %>
-        </td>
-        <td class="icon-col err-hover" onclick="deleteNote(<%= note.id %>);"><i class="fas fa-minus"></i></td>
-        <td class="icon-col warn-hover"><a href="/web/notes/<%= note.id %>"><i class="fas fa-edit"></i></a></td>
+      </td>
+      <td class="icon-col err-hover" onclick="deleteNote(<%= note.id %>);">
+        <i class="fas fa-minus"></i>
+      </td>
+      <td class="icon-col warn-hover">
+        <a href="/web/notes/<%= note.id %>">
+          <i class="fas fa-edit"></i>
+        </a>
+      </td>
     </tr>
 
-<% } %>
-<% } else { %>
-<p>No notes available... Add a note below.</p>
-<% } %>
+  <% } %>
+  <% } else { %>
+  <p>No notes available... Add a note below.</p>
+  <% } %>
 
-</table>
+  </table>
 
-
-<h2>Add a note</h2>
-<form id="newNote">
+  <h2>Add a note</h2>
+  <form id="newNote">
     <label for="title">Title:</label><br>
     <input type="text" id="title" name="title"><br>
     <label for="content">Content:</label><br>
     <textarea id="content" name="content" placeholder="Enter your note here..."></textarea><br>
     <input type="submit" value="ADD">
-</form>
+  </form>
 
-</div> 
+</main>

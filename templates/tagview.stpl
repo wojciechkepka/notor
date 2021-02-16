@@ -1,33 +1,35 @@
-<span id="back_arr" onclick="getBack();">
-<i class="fas fa-chevron-left"></i>
-</span>
-<h1>Notes with tag
-    <span class="note-tag"><a href="/web/tags/<%= tag.id %>"><%= *tag.name %></a></span>
-</h1>
-<div class="wrapper">
-<p id="err_box"></p>
+<header>
+  <span id="back_arr" onclick="getBack();">
+    <i class="fas fa-chevron-left"></i>
+  </span>
+</header>
 
-<% if notes.len() > 0 { %>
-<table class="notes_listing">
+<main>
+  <h1>Notes with tag
+    <span class="note-tag"><a href="/web/tags/<%= tag.id %>"><%= *tag.name %></a></span>
+  </h1>
+  <p id="err_box"></p>
+
+  <% if notes.len() > 0 { %>
+  <table class="notes_listing">
     <colgroup>
-        <col style="width: 30%;" />
-        <col style="width: 70%;" />
+      <col style="width: 30%;" />
+      <col style="width: 70%;" />
     </colgroup>
     <tr>
-        <th>Created</th>
-        <th>Title</th>
+      <th>Created</th>
+      <th>Title</th>
     </tr>
-<% for note in notes.iter() { %>
-
+    <% for note in notes.iter() { %>
     <tr>
-        <td><%= note.created_datetime() %></td>
-        <td class="title-col"><a href="/web/notes/<%= note.id %>"><%= *note.title %></a></td>
+      <td><%= note.created_datetime() %></td>
+      <td class="title-col">
+        <a href="/web/notes/<%= note.id %>"><%= *note.title %></a>
+      </td>
     </tr>
-
-<% } %>
-<% } else { %>
-<p>No notes with selected tag available...</p>
-<% } %>
-
-</table>
-</div>
+    <% } %>
+  <% } else { %>
+  <p>No notes with selected tag available...</p>
+  <% } %>
+  </table>
+</main>
