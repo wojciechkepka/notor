@@ -7,13 +7,25 @@ use warp::http::StatusCode;
 use warp::{reject, reply, Rejection, Reply};
 
 #[derive(Error, Debug)]
-pub(crate) enum RejectError {
-    #[error("database error")]
+pub enum RejectError {
+    #[error("database error - `{0}`")]
     DbError(#[from] sqlx::Error),
-    #[error("rendering template failed")]
+    #[error("rendering template failed - `{0}`")]
     RenderError(#[from] RenderError),
-    #[error("UTF-8 conversion failed")]
+    #[error("UTF-8 conversion failed - `{0}`")]
     Utf8ConversionError(#[from] std::str::Utf8Error),
+    #[error("invalid role `{0}`")]
+    InvalidRole(String),
+    #[error("timestamp was invalid")]
+    InvalidTimestamp,
+    #[error("creating auth token failed - `{0}`")]
+    TokenCreationError(#[from] jsonwebtoken::errors::Error),
+    #[error("no authentication header was provided")]
+    AuthHeaderMissing,
+    #[error("provided authentication header was invalid")]
+    InvalidAuthHeader,
+    #[error("user has no perrmision to access this secition")]
+    UnauthorizedAccess,
 }
 impl reject::Reject for RejectError {}
 
@@ -26,10 +38,14 @@ impl RejectError {
             DbError(err) => match err {
                 RowNotFound => (StatusCode::NOT_FOUND, "not found".into()),
                 // #TODO: handle all
-                err => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+                err => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             },
-            RenderError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
-            Utf8ConversionError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+            InvalidRole(role) => (StatusCode::BAD_REQUEST, self.to_string()),
+            TokenCreationError(_) | Utf8ConversionError(_) | RenderError(_) | InvalidTimestamp => {
+                (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
+            }
+            AuthHeaderMissing | InvalidAuthHeader => (StatusCode::FORBIDDEN, self.to_string()),
+            UnauthorizedAccess => (StatusCode::UNAUTHORIZED, self.to_string()),
         }
     }
 }

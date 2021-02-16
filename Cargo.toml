@@ -23,4 +23,6 @@ sqlx = { version = "0.5.1", features = [ "runtime-tokio-rustls", "postgres", "ma
 dotenv = "0.15"
 sailfish = { git = "https://github.com/Kogia-sima/sailfish", branch = "master" }
 thiserror = "1"
-funty = "=1.1.0"
+funty = "=1.1.0" # temporary bugfix
+jsonwebtoken = "7"
+

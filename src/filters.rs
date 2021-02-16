@@ -1,4 +1,12 @@
+use crate::db::Db;
+use crate::handlers::auth::authorize;
+use crate::models::UserRole;
 use serde::Deserialize;
+use warp::{
+    filters::header::headers_cloned,
+    http::{HeaderMap, HeaderValue},
+    reject, Filter, Rejection,
+};
 
 #[derive(Default, Deserialize)]
 pub struct QueryFilter {
@@ -36,4 +44,13 @@ impl QueryFilterBuilder {
             tag_id: self.tag_id,
         }
     }
+}
+
+pub fn with_auth(
+    role: UserRole,
+    db: Db,
+) -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
+    headers_cloned()
+        .map(move |headers: HeaderMap<HeaderValue>| (role.clone(), db.clone(), headers))
+        .and_then(authorize)
 }

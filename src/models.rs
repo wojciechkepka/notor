@@ -1,9 +1,11 @@
 use crate::db::DbConn;
 use crate::filters::QueryFilter;
+use crate::Error;
 
 use chrono::{Datelike, NaiveDateTime, Timelike};
 use serde::{Deserialize, Serialize};
 use sqlx::Error as DbErr;
+use sqlx::{database::HasValueRef, Database, Decode};
 
 pub type NoteWithTags = (Note, Vec<Tag>);
 
@@ -287,4 +289,52 @@ impl ErrReply {
             message: message.as_ref().to_string(),
         }
     }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+pub enum UserRole {
+    User,
+    //Admin
+}
+
+impl std::str::FromStr for UserRole {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "user" => Ok(UserRole::User),
+            role => Err(Error::InvalidRole(role.to_string())),
+        }
+    }
+}
+
+impl AsRef<str> for UserRole {
+    fn as_ref(&self) -> &str {
+        match self {
+            UserRole::User => "user",
+        }
+    }
+}
+
+impl<'r, DB: Database> Decode<'r, DB> for UserRole
+where
+    &'r str: Decode<'r, DB>,
+{
+    fn decode(
+        value: <DB as HasValueRef<'r>>::ValueRef,
+    ) -> Result<UserRole, Box<dyn std::error::Error + Send + Sync + 'static>> {
+        let value = <&str as Decode<DB>>::decode(value)?;
+
+        Ok(value.parse()?)
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct User {
+    id: i32,
+    created: NaiveDateTime,
+    username: String,
+    email: String,
+    pass: String,
+    role: UserRole,
 }
