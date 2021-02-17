@@ -14,6 +14,16 @@
   --tag-border: #7A93AC;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+}
+
 html, body, input, textarea, select, button {
   background-color: var(--darkmode-bg);
   color: var(--darkmode-text);
@@ -32,10 +42,6 @@ h1, h2, h3, h4 {
 .input-form label input,
 .input-form label textarea {
   margin-top: 0.4em;
-}
-
-.input-form label input {
-  width: 100%;
 }
 
 .input-form label {
@@ -172,3 +178,8 @@ main {
 #content {
   resize: none;
 }
+
+#login {
+  margin: auto;
+}
+

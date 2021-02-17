@@ -1,7 +1,7 @@
 use super::*;
 use crate::html::HtmlContext;
 use crate::models::{Note, Tag};
-use crate::web::{Index, NoteView, TagView, INDEX_SCRIPT, INDEX_STYLE};
+use crate::web::{Index, Login, NoteView, TagView, INDEX_SCRIPT, INDEX_STYLE};
 use sailfish::TemplateOnce;
 
 const FONT_AWESOME: &str =
@@ -91,6 +91,14 @@ pub(crate) async fn get_web_tagview(
     let view = TagView::new(tag, notes);
 
     let html = html_from(view, page_title, INDEX_SCRIPT, INDEX_STYLE)?;
+
+    Ok(reply::html(html))
+}
+
+pub(crate) async fn get_web_login() -> Result<impl Reply, Rejection> {
+    let view = Login {};
+
+    let html = html_from(view, "Login".to_string(), INDEX_SCRIPT, INDEX_STYLE)?;
 
     Ok(reply::html(html))
 }

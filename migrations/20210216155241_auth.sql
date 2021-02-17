@@ -1,5 +1,3 @@
--- Add migration script here
-
 CREATE TYPE user_role AS ENUM ( 'user', 'admin' );
 
 CREATE TABLE IF NOT EXISTS users
@@ -18,5 +16,5 @@ CREATE TABLE IF NOT EXISTS claims
 (
     sub         VARCHAR(64) NOT NULL,
     role        VARCHAR(64) NOT NULL,
-    exp         TIMESTAMP   NOT NULL
+    exp         BIGINT      NOT NULL
 );

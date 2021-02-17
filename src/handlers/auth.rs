@@ -1,16 +1,22 @@
 use super::*;
 
-use crate::auth::{jwt_from_header, jwt_gen, JWT_SECRET};
+use crate::auth::{jwt_from_headers, jwt_gen, JWT_SECRET};
 use crate::db::Db;
 use crate::models::{Claims, JsonAuth, User, UserRole};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use warp::http::{HeaderMap, HeaderValue};
+use warp::http::header::{HeaderMap, HeaderValue};
 
-pub async fn authorize(
+pub async fn authorize_headers(
     (role, db, headers): (UserRole, Db, HeaderMap<HeaderValue>),
 ) -> Result<String, Rejection> {
-    let token = jwt_from_header(&headers).map_err(reject::custom)?;
+    let token = jwt_from_headers(&headers)
+        .map_err(Error::from)
+        .map_err(reject::custom)?;
 
+    authorize((role, db, token)).await
+}
+
+pub async fn authorize((role, db, token): (UserRole, Db, String)) -> Result<String, Rejection> {
     let decoded = decode::<Claims>(
         &token,
         &DecodingKey::from_secret(JWT_SECRET),
@@ -49,12 +55,19 @@ pub(crate) async fn handle_login(auth: JsonAuth, conn: Db) -> Result<impl Reply,
         return Err(reject::custom(Error::InvalidPassword));
     }
 
-    if let Some(claims) = Claims::load_if_exists(&user.username, &conn).await {
+    if let Some(_) = Claims::load_if_exists(&user.username, &conn).await {
         Claims::delete(&user.username, &conn)
             .await
             .map_err(Error::from)
             .map_err(reject::custom)?;
     }
 
-    Ok(jwt_gen(user.username, &user.role)?)
+    let (claim, token) = jwt_gen(user.username, &user.role)?;
+
+    Claims::save(&claim, &conn)
+        .await
+        .map_err(Error::from)
+        .map_err(reject::custom)?;
+
+    Ok(token)
 }

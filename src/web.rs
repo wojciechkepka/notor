@@ -59,3 +59,7 @@ impl TagView {
         TagView { tag, notes }
     }
 }
+
+#[derive(Default, Debug, Serialize, TemplateOnce)]
+#[template(path = "login.stpl")]
+pub struct Login {}

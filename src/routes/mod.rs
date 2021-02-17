@@ -5,13 +5,15 @@ mod web;
 
 use std::convert::Infallible;
 use warp::{
+    filters::cookie::cookie,
     filters::header::headers_cloned,
-    http::{HeaderMap, HeaderValue},
+    http::header::{HeaderMap, HeaderValue},
     Filter, Rejection, Reply,
 };
 
+use crate::auth::BEARER_COOKIE;
 use crate::db::Db;
-use crate::handlers::auth::authorize;
+use crate::handlers::auth::{authorize, authorize_headers};
 use crate::models::UserRole;
 use crate::rejections::handle_rejection;
 
@@ -24,13 +26,22 @@ fn with_db(db: Db) -> impl Filter<Extract = (Db,), Error = Infallible> + Clone {
     warp::any().map(move || db.clone())
 }
 
-fn with_auth(
+fn with_auth_cookie(
+    role: UserRole,
+    db: Db,
+) -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
+    cookie(BEARER_COOKIE)
+        .map(move |token: String| (role.clone(), db.clone(), token))
+        .and_then(authorize)
+}
+
+pub fn with_auth_header(
     role: UserRole,
     db: Db,
 ) -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
     headers_cloned()
         .map(move |headers: HeaderMap<HeaderValue>| (role.clone(), db.clone(), headers))
-        .and_then(authorize)
+        .and_then(authorize_headers)
 }
 
 pub fn routes(db: Db) -> impl Filter<Extract = impl Reply, Error = Infallible> + Clone {
@@ -50,7 +61,8 @@ pub fn routes(db: Db) -> impl Filter<Extract = impl Reply, Error = Infallible> +
 
     let web_routes = ro_get_web(db.clone())
         .or(ro_web_note(db.clone()))
-        .or(ro_web_tagview(db.clone()));
+        .or(ro_web_tagview(db.clone()))
+        .or(ro_web_login());
 
     let auth_routes = ro_auth(db.clone());
 

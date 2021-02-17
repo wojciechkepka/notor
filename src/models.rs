@@ -392,12 +392,12 @@ pub struct JsonAuth {
 pub struct Claims {
     pub sub: String,
     pub role: String,
-    pub exp: NaiveDateTime,
+    pub exp: i64,
 }
 
 impl Claims {
     pub fn is_expired(&self) -> bool {
-        self.exp < Utc::now().naive_utc()
+        self.exp < Utc::now().timestamp()
     }
     pub async fn load<S: AsRef<str>>(sub: S, conn: &DbConn) -> Result<Self, DbErr> {
         sqlx::query_as!(
