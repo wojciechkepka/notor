@@ -37,7 +37,7 @@ where
         .map_err(reject::custom)
 }
 
-pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn get_web(username: String, conn: Db) -> Result<impl Reply, Rejection> {
     let _notes = Note::load_notes_with_tags(QueryFilter::default(), &conn)
         .await
         .map_err(RejectError::from)
@@ -50,7 +50,11 @@ pub(crate) async fn get_web(conn: Db) -> Result<impl Reply, Rejection> {
     Ok(reply::html(html))
 }
 
-pub(crate) async fn get_web_note(id: i32, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn get_web_note(
+    id: i32,
+    username: String,
+    conn: Db,
+) -> Result<impl Reply, Rejection> {
     let note = Note::load(id, &conn)
         .await
         .map_err(RejectError::from)
@@ -68,7 +72,11 @@ pub(crate) async fn get_web_note(id: i32, conn: Db) -> Result<impl Reply, Reject
     Ok(reply::html(html))
 }
 
-pub(crate) async fn get_web_tagview(id: i32, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn get_web_tagview(
+    id: i32,
+    username: String,
+    conn: Db,
+) -> Result<impl Reply, Rejection> {
     let notes = Note::load_notes(QueryFilter::builder().tag(id).build(), &conn)
         .await
         .map_err(RejectError::from)

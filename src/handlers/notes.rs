@@ -2,7 +2,11 @@ use super::*;
 use crate::models::{NewNote, NewTag, Note, Tag};
 use warp::reject;
 
-pub(crate) async fn get_notes(filter: QueryFilter, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn get_notes(
+    filter: QueryFilter,
+    username: String,
+    conn: Db,
+) -> Result<impl Reply, Rejection> {
     Note::load_notes(filter, &conn)
         .await
         .map(|note| reply::json(&note))
@@ -10,7 +14,7 @@ pub(crate) async fn get_notes(filter: QueryFilter, conn: Db) -> Result<impl Repl
         .map_err(reject::custom)
 }
 
-pub(crate) async fn get_note(id: i32, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn get_note(id: i32, username: String, conn: Db) -> Result<impl Reply, Rejection> {
     Note::load(id, &conn)
         .await
         .map(|note| reply::json(&note))
@@ -18,7 +22,11 @@ pub(crate) async fn get_note(id: i32, conn: Db) -> Result<impl Reply, Rejection>
         .map_err(reject::custom)
 }
 
-pub(crate) async fn put_note(note: NewNote, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn put_note(
+    note: NewNote,
+    username: String,
+    conn: Db,
+) -> Result<impl Reply, Rejection> {
     Note::save(&note, &conn)
         .await
         .map(|note| reply::json(&note))
@@ -26,7 +34,11 @@ pub(crate) async fn put_note(note: NewNote, conn: Db) -> Result<impl Reply, Reje
         .map_err(reject::custom)
 }
 
-pub(crate) async fn delete_note(id: i32, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn delete_note(
+    id: i32,
+    username: String,
+    conn: Db,
+) -> Result<impl Reply, Rejection> {
     Note::delete(id, &conn)
         .await
         .map(|_| reply::reply())
@@ -34,7 +46,12 @@ pub(crate) async fn delete_note(id: i32, conn: Db) -> Result<impl Reply, Rejecti
         .map_err(reject::custom)
 }
 
-pub(crate) async fn update_note(id: i32, note: NewNote, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn update_note(
+    id: i32,
+    note: NewNote,
+    username: String,
+    conn: Db,
+) -> Result<impl Reply, Rejection> {
     Note::update(id, &note, &conn)
         .await
         .map(|_| reply::reply())
@@ -45,6 +62,7 @@ pub(crate) async fn update_note(id: i32, note: NewNote, conn: Db) -> Result<impl
 pub(crate) async fn tag_note(
     note_id_: i32,
     tag: String,
+    username: String,
     conn: Db,
 ) -> Result<impl Reply, Rejection> {
     let tag_id_ = match Tag::search(&tag, &conn)
@@ -70,6 +88,7 @@ pub(crate) async fn tag_note(
 pub(crate) async fn untag_note(
     note_id_: i32,
     tag_id_: i32,
+    username: String,
     conn: Db,
 ) -> Result<impl Reply, Rejection> {
     Note::untag(note_id_, tag_id_, &conn)
@@ -79,7 +98,11 @@ pub(crate) async fn untag_note(
         .map_err(reject::custom)
 }
 
-pub(crate) async fn get_note_tags(note_id_: i32, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn get_note_tags(
+    note_id_: i32,
+    username: String,
+    conn: Db,
+) -> Result<impl Reply, Rejection> {
     let conn = lock_db(&conn)?;
 
     Note::tags(note_id_, &conn)

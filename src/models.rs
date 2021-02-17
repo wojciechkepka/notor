@@ -2,10 +2,9 @@ use crate::db::DbConn;
 use crate::filters::QueryFilter;
 use crate::Error;
 
-use chrono::{Datelike, NaiveDateTime, Timelike};
+use chrono::{Datelike, NaiveDateTime, Timelike, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::Error as DbErr;
-use sqlx::{database::HasValueRef, Database, Decode};
 
 pub type NoteWithTags = (Note, Vec<Tag>);
 
@@ -291,10 +290,11 @@ impl ErrReply {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, sqlx::Type)]
+#[sqlx(type_name = "user_role", rename_all = "lowercase")]
 pub enum UserRole {
     User,
-    //Admin
+    Admin,
 }
 
 impl std::str::FromStr for UserRole {
@@ -303,6 +303,7 @@ impl std::str::FromStr for UserRole {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "user" => Ok(UserRole::User),
+            "admin" => Ok(UserRole::Admin),
             role => Err(Error::InvalidRole(role.to_string())),
         }
     }
@@ -312,29 +313,136 @@ impl AsRef<str> for UserRole {
     fn as_ref(&self) -> &str {
         match self {
             UserRole::User => "user",
+            UserRole::Admin => "admin",
         }
-    }
-}
-
-impl<'r, DB: Database> Decode<'r, DB> for UserRole
-where
-    &'r str: Decode<'r, DB>,
-{
-    fn decode(
-        value: <DB as HasValueRef<'r>>::ValueRef,
-    ) -> Result<UserRole, Box<dyn std::error::Error + Send + Sync + 'static>> {
-        let value = <&str as Decode<DB>>::decode(value)?;
-
-        Ok(value.parse()?)
     }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct User {
-    id: i32,
-    created: NaiveDateTime,
+    pub id: i32,
+    pub created: NaiveDateTime,
+    pub username: String,
+    pub email: String,
+    pub pass: String,
+    pub role: UserRole,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct NewUser {
     username: String,
     email: String,
     pass: String,
     role: UserRole,
+}
+
+impl User {
+    pub async fn load<S: AsRef<str>>(username: S, conn: &DbConn) -> Result<Self, DbErr> {
+        sqlx::query_as!(
+            User,
+            r#"
+SELECT id, created, username, email, pass, role as "role: _"
+FROM users
+WHERE username = $1
+            "#,
+            username.as_ref()
+        )
+        .fetch_one(conn)
+        .await
+    }
+
+    pub async fn save(user: &NewUser, conn: &DbConn) -> Result<Self, DbErr> {
+        sqlx::query_as!(
+            User,
+            r#"
+INSERT INTO users ( username, email, pass, role )
+VALUES ( $1, $2, $3, $4 )
+RETURNING id, created, username, email, pass, role as "role: _"
+            "#,
+            &user.username,
+            &user.email,
+            &user.pass,
+            user.role as _,
+        )
+        .fetch_one(conn)
+        .await
+    }
+
+    pub async fn delete<S: AsRef<str>>(username: S, conn: &DbConn) -> Result<(), DbErr> {
+        sqlx::query!(
+            "
+DELETE FROM users
+WHERE username = $1
+            ",
+            username.as_ref()
+        )
+        .execute(conn)
+        .await
+        .map(|_| ())
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct JsonAuth {
+    pub username: String,
+    pub pass: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub struct Claims {
+    pub sub: String,
+    pub role: String,
+    pub exp: NaiveDateTime,
+}
+
+impl Claims {
+    pub fn is_expired(&self) -> bool {
+        self.exp < Utc::now().naive_utc()
+    }
+    pub async fn load<S: AsRef<str>>(sub: S, conn: &DbConn) -> Result<Self, DbErr> {
+        sqlx::query_as!(
+            Claims,
+            "
+SELECT sub, role, exp
+FROM claims
+WHERE sub = $1
+            ",
+            sub.as_ref()
+        )
+        .fetch_one(conn)
+        .await
+    }
+
+    pub async fn load_if_exists<S: AsRef<str>>(sub: S, conn: &DbConn) -> Option<Self> {
+        Self::load(sub, conn).await.ok()
+    }
+
+    pub async fn save(claim: &Claims, conn: &DbConn) -> Result<Self, DbErr> {
+        sqlx::query_as!(
+            Claims,
+            "
+INSERT INTO claims ( sub, role, exp )
+VALUES ( $1, $2, $3 )
+RETURNING *
+            ",
+            &claim.sub,
+            &claim.role,
+            &claim.exp,
+        )
+        .fetch_one(conn)
+        .await
+    }
+
+    pub async fn delete<S: AsRef<str>>(sub: S, conn: &DbConn) -> Result<(), DbErr> {
+        sqlx::query!(
+            "
+DELETE FROM claims
+WHERE sub = $1
+            ",
+            sub.as_ref()
+        )
+        .execute(conn)
+        .await
+        .map(|_| ())
+    }
 }

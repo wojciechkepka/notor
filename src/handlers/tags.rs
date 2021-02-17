@@ -1,7 +1,11 @@
 use super::*;
 use crate::models::{NewTag, Tag};
 
-pub(crate) async fn get_tags(filter: QueryFilter, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn get_tags(
+    filter: QueryFilter,
+    username: String,
+    conn: Db,
+) -> Result<impl Reply, Rejection> {
     Tag::load_tags(filter, &conn)
         .await
         .map(|tags| reply::json(&tags))
@@ -9,7 +13,7 @@ pub(crate) async fn get_tags(filter: QueryFilter, conn: Db) -> Result<impl Reply
         .map_err(reject::custom)
 }
 
-pub(crate) async fn get_tag(id: i32, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn get_tag(id: i32, username: String, conn: Db) -> Result<impl Reply, Rejection> {
     Tag::load(id, &conn)
         .await
         .map(|tag| reply::json(&tag))
@@ -17,7 +21,11 @@ pub(crate) async fn get_tag(id: i32, conn: Db) -> Result<impl Reply, Rejection> 
         .map_err(reject::custom)
 }
 
-pub(crate) async fn put_tag(tag: NewTag, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn put_tag(
+    tag: NewTag,
+    username: String,
+    conn: Db,
+) -> Result<impl Reply, Rejection> {
     Tag::save(&tag, &conn)
         .await
         .map(|tag| reply::json(&tag))
@@ -25,7 +33,11 @@ pub(crate) async fn put_tag(tag: NewTag, conn: Db) -> Result<impl Reply, Rejecti
         .map_err(reject::custom)
 }
 
-pub(crate) async fn delete_tag(id: i32, conn: Db) -> Result<impl Reply, Rejection> {
+pub(crate) async fn delete_tag(
+    id: i32,
+    username: String,
+    conn: Db,
+) -> Result<impl Reply, Rejection> {
     Tag::delete(id, &conn)
         .await
         .map(|_| reply::reply())

@@ -26,6 +26,12 @@ pub enum RejectError {
     InvalidAuthHeader,
     #[error("user has no perrmision to access this secition")]
     UnauthorizedAccess,
+    #[error("provided authentication token was invalid")]
+    InvalidAuthToken,
+    #[error("authentication token expired")]
+    AuthTokenExpired,
+    #[error("provided password was invalid")]
+    InvalidPassword,
 }
 impl reject::Reject for RejectError {}
 
@@ -44,7 +50,8 @@ impl RejectError {
             TokenCreationError(_) | Utf8ConversionError(_) | RenderError(_) | InvalidTimestamp => {
                 (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
             }
-            AuthHeaderMissing | InvalidAuthHeader => (StatusCode::FORBIDDEN, self.to_string()),
+            AuthHeaderMissing | InvalidAuthHeader | InvalidAuthToken | AuthTokenExpired
+            | InvalidPassword => (StatusCode::FORBIDDEN, self.to_string()),
             UnauthorizedAccess => (StatusCode::UNAUTHORIZED, self.to_string()),
         }
     }

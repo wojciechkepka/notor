@@ -1,31 +1,23 @@
-use crate::models::UserRole;
+use crate::models::{Claims, UserRole};
 use crate::Error;
 use chrono::Utc;
-use jsonwebtoken::{encode, Algorithm, EncodingKey, Header, Validation};
-use serde::{Deserialize, Serialize};
+use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use warp::http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
 
 const JWT_EXP_MIN: i64 = 2;
 pub const JWT_SECRET: &[u8] = b"*-sH*y2STY4Uz^jXE8rLQ_XePB%%A?fT";
 const BEARER: &str = "Bearer ";
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
-    pub sub: String,
-    pub role: String,
-    pub exp: usize,
-}
-
 pub fn jwt_gen(username: String, role: &UserRole) -> Result<String, Error> {
     let exp = Utc::now()
         .checked_add_signed(chrono::Duration::minutes(JWT_EXP_MIN))
         .ok_or_else(|| Error::InvalidTimestamp)?
-        .timestamp();
+        .naive_utc();
 
     let claim = Claims {
         sub: username,
         role: role.as_ref().to_string(),
-        exp: exp as usize,
+        exp,
     };
 
     let header = Header::new(Algorithm::HS512);
