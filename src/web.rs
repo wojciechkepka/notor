@@ -64,6 +64,7 @@ impl Default for NoteView {
         NoteView {
             note: Note {
                 id: 0,
+                user_id: 0,
                 created: chrono::offset::Utc::now().naive_utc(),
                 title: "Error".to_string(),
                 content: Some("missing note".to_string()),

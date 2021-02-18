@@ -11,6 +11,7 @@ pub type NoteWithTags = (Note, Vec<Tag>);
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Note {
     pub id: i32,
+    pub user_id: i32,
     pub created: NaiveDateTime,
     pub title: String,
     pub content: Option<String>,
@@ -28,7 +29,11 @@ impl Note {
             created.minute()
         )
     }
-    pub async fn load_notes(filter: QueryFilter, conn: &DbConn) -> Result<Vec<Note>, DbErr> {
+    pub async fn load_notes<S: AsRef<str>>(
+        filter: QueryFilter,
+        username: S,
+        conn: &DbConn,
+    ) -> Result<Vec<Note>, DbErr> {
         let limit = if let Some(l) = filter.limit {
             l
         } else {
@@ -38,15 +43,17 @@ impl Note {
         if let Some(tag) = filter.tag_id {
             sqlx::query_as!(
                 Note,
-                "
-    SELECT id, created, title, content
+                r#"
+    SELECT notes.id, users.id as "user_id: _", notes.created, title, content
     FROM notes
     INNER JOIN notes_tags on notes_tags.note_id = notes.id
-    WHERE notes_tags.tag_id = $1
-    ORDER BY id
-    LIMIT $2
-                ",
+    INNER JOIN users on users.id = notes.user_id
+    WHERE notes_tags.tag_id = $1 AND username = $2
+    ORDER BY notes.id
+    LIMIT $3
+                "#,
                 tag,
+                username.as_ref(),
                 limit
             )
             .fetch_all(conn)
@@ -54,12 +61,15 @@ impl Note {
         } else {
             sqlx::query_as!(
                 Note,
-                "
-    SELECT *
+                r#"
+    SELECT notes.id, users.id as "user_id: _", notes.created, title, content
     FROM notes
-    ORDER BY id
-    LIMIT $1
-                ",
+    INNER JOIN users on users.id = notes.user_id
+    WHERE username = $1
+    ORDER BY notes.id
+    LIMIT $2
+                "#,
+                username.as_ref(),
                 limit
             )
             .fetch_all(conn)
@@ -67,12 +77,13 @@ impl Note {
         }
     }
 
-    pub async fn load_notes_with_tags(
+    pub async fn load_notes_with_tags<S: AsRef<str>>(
         filter: QueryFilter,
+        username: S,
         conn: &DbConn,
     ) -> Result<Vec<NoteWithTags>, DbErr> {
         let mut notes_with_tags = Vec::new();
-        for note in Note::load_notes(filter, &conn).await? {
+        for note in Note::load_notes(filter, username, &conn).await? {
             let tags = Note::tags(note.id, &conn).await?;
 
             notes_with_tags.push((note, tags));
@@ -99,13 +110,14 @@ WHERE id = $1
         sqlx::query_as!(
             Note,
             "
-INSERT INTO notes ( created, title, content )
-VALUES ( $1, $2, $3 )
+INSERT INTO notes ( created, title, content, user_id )
+VALUES ( $1, $2, $3, ( SELECT id FROM users WHERE users.username = $4 ) )
 RETURNING *
             ",
             chrono::offset::Utc::now().naive_utc(),
             note.title,
-            note.content
+            note.content,
+            note.username,
         )
         .fetch_one(conn)
         .await
@@ -185,12 +197,13 @@ WHERE note_id = $1 AND tag_id = $2
     pub async fn tags(note_id: i32, conn: &DbConn) -> Result<Vec<Tag>, DbErr> {
         sqlx::query_as!(
             Tag,
-            "
-SELECT id, name
+            r#"
+SELECT tags.id, u.id as "user_id: _", name
 FROM tags
 INNER JOIN notes_tags AS nt ON nt.tag_id = tags.id
+INNER JOIN users AS u ON u.id = tags.user_id
 WHERE nt.note_id = $1
-            ",
+            "#,
             note_id
         )
         .fetch_all(conn)
@@ -200,6 +213,7 @@ WHERE nt.note_id = $1
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NewNote {
+    pub username: String,
     pub title: String,
     pub content: Option<String>,
 }
@@ -207,11 +221,16 @@ pub struct NewNote {
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Tag {
     pub id: i32,
+    pub user_id: i32,
     pub name: String,
 }
 
 impl Tag {
-    pub async fn load_tags(filter: QueryFilter, conn: &DbConn) -> Result<Vec<Tag>, DbErr> {
+    pub async fn load_tags<S: AsRef<str>>(
+        filter: QueryFilter,
+        username: S,
+        conn: &DbConn,
+    ) -> Result<Vec<Tag>, DbErr> {
         let limit = if let Some(l) = filter.limit {
             l
         } else {
@@ -220,11 +239,14 @@ impl Tag {
 
         sqlx::query_as!(
             Tag,
-            "
-SELECT *
+            r#"
+SELECT tags.id, users.id as "user_id: _", name
 FROM tags
-LIMIT $1
-            ",
+INNER JOIN users on users.id = tags.user_id
+WHERE users.username = $1
+LIMIT $2
+            "#,
+            username.as_ref(),
             limit
         )
         .fetch_all(conn)
@@ -234,11 +256,11 @@ LIMIT $1
     pub async fn load(id: i32, conn: &DbConn) -> Result<Tag, DbErr> {
         sqlx::query_as!(
             Tag,
-            "
-SELECT *
+            r#"
+SELECT id, name, user_id as "user_id: _"
 FROM tags
 WHERE id = $1
-            ",
+            "#,
             id
         )
         .fetch_one(conn)
@@ -248,12 +270,13 @@ WHERE id = $1
     pub async fn save(tag: &NewTag, conn: &DbConn) -> Result<Tag, DbErr> {
         sqlx::query_as!(
             Tag,
-            "
-INSERT INTO tags ( name )
-VALUES ( $1 )
-RETURNING *
-            ",
+            r#"
+INSERT INTO tags ( name, user_id )
+VALUES ( $1, (SELECT id FROM users WHERE username = $2) )
+RETURNING id, name, user_id as "user_id: _" 
+            "#,
             tag.name,
+            tag.username,
         )
         .fetch_one(conn)
         .await
@@ -272,14 +295,20 @@ WHERE id = $1
         .map(|_| ())
     }
 
-    pub async fn search<S: AsRef<str>>(tag: S, conn: &DbConn) -> Result<Option<i32>, DbErr> {
+    pub async fn search<S: AsRef<str>>(
+        tag: S,
+        username: S,
+        conn: &DbConn,
+    ) -> Result<Option<i32>, DbErr> {
         sqlx::query!(
             "
-SELECT id
+SELECT tags.id
 FROM tags
-WHERE name = $1
+INNER JOIN users ON users.id = tags.user_id
+WHERE name = $1 AND username = $2
             ",
-            tag.as_ref()
+            tag.as_ref(),
+            username.as_ref()
         )
         .fetch_optional(conn)
         .await
@@ -290,6 +319,7 @@ WHERE name = $1
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NewTag {
     pub name: String,
+    pub username: String,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -360,6 +390,20 @@ FROM users
 WHERE username = $1
             "#,
             username.as_ref()
+        )
+        .fetch_one(conn)
+        .await
+    }
+
+    pub async fn load_id(id: i32, conn: &DbConn) -> Result<Self, DbErr> {
+        sqlx::query_as!(
+            User,
+            r#"
+SELECT id, created, username, email, pass, role as "role: _"
+FROM users
+WHERE id = $1
+            "#,
+            id
         )
         .fetch_one(conn)
         .await

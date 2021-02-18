@@ -4,7 +4,7 @@ use crate::web::{html_from, Index, Login, NoteView, TagView, INDEX_SCRIPT, INDEX
 use crate::Error;
 
 pub(crate) async fn get_web(username: String, conn: Db) -> Result<impl Reply, Rejection> {
-    let _notes = Note::load_notes_with_tags(QueryFilter::default(), &conn)
+    let _notes = Note::load_notes_with_tags(QueryFilter::default(), username, &conn)
         .await
         .map_err(Error::from)
         .map_err(WebError::from)
@@ -17,11 +17,7 @@ pub(crate) async fn get_web(username: String, conn: Db) -> Result<impl Reply, Re
     Ok(reply::html(html))
 }
 
-pub(crate) async fn get_web_note(
-    id: i32,
-    username: String,
-    conn: Db,
-) -> Result<impl Reply, Rejection> {
+pub(crate) async fn get_web_note(id: i32, _: String, conn: Db) -> Result<impl Reply, Rejection> {
     let note = Note::load(id, &conn)
         .await
         .map_err(Error::from)
@@ -46,7 +42,7 @@ pub(crate) async fn get_web_tagview(
     username: String,
     conn: Db,
 ) -> Result<impl Reply, Rejection> {
-    let notes = Note::load_notes(QueryFilter::builder().tag(id).build(), &conn)
+    let notes = Note::load_notes(QueryFilter::builder().tag(id).build(), username, &conn)
         .await
         .map_err(Error::from)
         .map_err(WebError::from)

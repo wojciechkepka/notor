@@ -109,6 +109,14 @@ pub(crate) async fn handle_login(auth: JsonAuth, conn: Db) -> Result<impl Reply,
                 JWT_EXP_MIN * 60
             ),
         )
+        .header(
+            "Set-Cookie",
+            &format!(
+                "Username={}; max-age={}; SameSite=Strict",
+                auth.username,
+                JWT_EXP_MIN * 60
+            ),
+        )
         .body(token)
         .into_response())
 }

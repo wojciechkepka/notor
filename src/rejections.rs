@@ -33,6 +33,8 @@ pub enum RejectError {
     InvalidRole(String),
     #[error("timestamp was invalid")]
     InvalidTimestamp,
+    #[error("user is not authorized to access this page")]
+    UnauthorizedAccess,
     #[error("creating auth token failed - `{0}`")]
     TokenCreationError(#[from] jsonwebtoken::errors::Error),
     #[error("no authentication header was provided")]
@@ -72,6 +74,7 @@ impl RejectError {
             | InvalidHeaderInternalErr(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AuthHeaderMissing | InvalidAuthHeader | InvalidAuthToken | AuthTokenExpired
             | InvalidPassword => (StatusCode::FORBIDDEN, self.to_string()),
+            UnauthorizedAccess => (StatusCode::UNAUTHORIZED, self.to_string()),
         }
     }
 }
@@ -133,6 +136,7 @@ pub(crate) async fn handle_web_rejection(err: &WebError) -> Result<impl Reply, I
                 return Ok(warp::redirect::temporary(Uri::from_static("/web/login")).into_response())
                     as Response;
             }
+            UnauthorizedAccess => (StatusCode::UNAUTHORIZED, err.to_string()),
         },
     };
 

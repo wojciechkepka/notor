@@ -69,6 +69,7 @@ async function addNewNote(event) {
     const data = new FormData(event.target);
 
     note = {
+        username: getCookie("Username"),
         title: data.get("title"),
         content: data.get("content"),
     };
