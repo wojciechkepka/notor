@@ -1,10 +1,13 @@
 use super::*;
 
-use crate::auth::{jwt_from_headers, jwt_gen, JWT_SECRET};
+use crate::auth::{jwt_from_headers, jwt_gen, BEARER_COOKIE, JWT_EXP_MIN, JWT_SECRET};
 use crate::db::Db;
 use crate::models::{Claims, JsonAuth, User, UserRole};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use warp::http::header::{HeaderMap, HeaderValue};
+use warp::http::{
+    header::{HeaderMap, HeaderValue},
+    Response,
+};
 
 pub async fn authorize(
     (role, db, headers): (UserRole, Db, HeaderMap<HeaderValue>),
@@ -96,5 +99,16 @@ pub(crate) async fn handle_login(auth: JsonAuth, conn: Db) -> Result<impl Reply,
         .map_err(Error::from)
         .map_err(reject::custom)?;
 
-    Ok(token)
+    Ok(Response::builder()
+        .header(
+            "Set-Cookie",
+            &format!(
+                "{}={}; max-age={}; SameSite=Strict",
+                BEARER_COOKIE,
+                token,
+                JWT_EXP_MIN * 60
+            ),
+        )
+        .body(token)
+        .into_response())
 }

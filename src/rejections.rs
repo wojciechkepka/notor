@@ -2,8 +2,11 @@ use sailfish::RenderError;
 use std::convert::Infallible;
 use thiserror::Error;
 use warp::body::BodyDeserializeError;
-use warp::http::StatusCode;
-use warp::{reject::Reject, reply, Rejection, Reply};
+use warp::http::{StatusCode, Uri};
+use warp::{
+    reject::{InvalidHeader, Reject},
+    reply, Rejection, Reply,
+};
 
 use crate::models::ErrReply;
 use crate::web::{html_from, Login, INDEX_SCRIPT, INDEX_STYLE};
@@ -42,6 +45,10 @@ pub enum RejectError {
     AuthTokenExpired,
     #[error("provided password was invalid")]
     InvalidPassword,
+    #[error("internal error - `{0}`")]
+    InvalidHeaderInternalErr(#[from] warp::http::header::InvalidHeaderValue),
+    #[error("internal error - `{0}`")]
+    InvalidHeaderKey(#[from] warp::http::header::ToStrError),
 }
 impl Reject for RejectError {}
 
@@ -57,9 +64,12 @@ impl RejectError {
                 _ => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             },
             InvalidRole(_) => (StatusCode::BAD_REQUEST, self.to_string()),
-            TokenCreationError(_) | Utf8ConversionError(_) | RenderError(_) | InvalidTimestamp => {
-                (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
-            }
+            TokenCreationError(_)
+            | Utf8ConversionError(_)
+            | RenderError(_)
+            | InvalidTimestamp
+            | InvalidHeaderKey(_)
+            | InvalidHeaderInternalErr(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             AuthHeaderMissing | InvalidAuthHeader | InvalidAuthToken | AuthTokenExpired
             | InvalidPassword => (StatusCode::FORBIDDEN, self.to_string()),
         }
@@ -80,6 +90,17 @@ pub(crate) async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infal
         let (c, m) = err.reply(); // issue #71126 destructuring_assignment
         code = c;
         message = m;
+    } else if let Some(err) = err.find::<InvalidHeader>() {
+        match err.name() {
+            "Cookie" => {
+                return Ok(warp::redirect::temporary(Uri::from_static("/web/login")).into_response())
+                    as Response
+            }
+            _ => {
+                code = StatusCode::BAD_REQUEST;
+                message = err.to_string();
+            }
+        }
     } else if let Some(err) = err.find::<WebError>() {
         return handle_web_rejection(err).await.map(|v| v.into_response());
     }
@@ -88,8 +109,31 @@ pub(crate) async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infal
 }
 
 pub(crate) async fn handle_web_rejection(err: &WebError) -> Result<impl Reply, Infallible> {
-    let message = match err {
-        WebError::Inner(err) => err.reply().1,
+    use sqlx::Error::*;
+    use RejectError::*;
+
+    let (_, message) = match err {
+        WebError::Inner(err) => match err {
+            DbError(err) => match err {
+                RowNotFound => (StatusCode::NOT_FOUND, "not found".into()),
+                // #TODO: handle all
+                _ => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+            },
+            InvalidRole(_) => (StatusCode::BAD_REQUEST, err.to_string()),
+            TokenCreationError(_)
+            | Utf8ConversionError(_)
+            | RenderError(_)
+            | InvalidTimestamp
+            | InvalidHeaderKey(_)
+            | InvalidHeaderInternalErr(_) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+            InvalidAuthHeader | InvalidAuthToken | InvalidPassword => {
+                (StatusCode::FORBIDDEN, err.to_string())
+            }
+            AuthTokenExpired | AuthHeaderMissing => {
+                return Ok(warp::redirect::temporary(Uri::from_static("/web/login")).into_response())
+                    as Response;
+            }
+        },
     };
 
     let view = Login::new(&message);

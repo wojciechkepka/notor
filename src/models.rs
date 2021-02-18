@@ -365,6 +365,7 @@ WHERE username = $1
         .await
     }
 
+    #[allow(dead_code)]
     pub async fn save(user: &NewUser, conn: &DbConn) -> Result<Self, DbErr> {
         sqlx::query_as!(
             User,
@@ -382,6 +383,7 @@ RETURNING id, created, username, email, pass, role as "role: _"
         .await
     }
 
+    #[allow(dead_code)]
     pub async fn delete<S: AsRef<str>>(username: S, conn: &DbConn) -> Result<(), DbErr> {
         sqlx::query!(
             "

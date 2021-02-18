@@ -1,4 +1,4 @@
-use warp::{Filter, Rejection, Reply};
+use warp::{http::Uri, Filter, Rejection, Reply};
 
 use super::{with_auth_cookie, with_db};
 use crate::db::Db;
@@ -11,6 +11,12 @@ pub(crate) fn ro_get_web(db: Db) -> impl Filter<Extract = impl Reply, Error = Re
         .and(with_auth_cookie(UserRole::User, db.clone()))
         .and(with_db(db))
         .and_then(get_web)
+}
+
+pub(crate) fn ro_get_web_no_auth() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path!("web")
+        .and(warp::get())
+        .map(|| warp::redirect::temporary(Uri::from_static("/web/login")))
 }
 
 pub(crate) fn ro_web_note(db: Db) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {

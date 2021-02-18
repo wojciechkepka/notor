@@ -62,7 +62,8 @@ pub fn routes(db: Db) -> impl Filter<Extract = impl Reply, Error = Infallible> +
     let web_routes = ro_get_web(db.clone())
         .or(ro_web_note(db.clone()))
         .or(ro_web_tagview(db.clone()))
-        .or(ro_web_login());
+        .or(ro_web_login())
+        .or(ro_get_web_no_auth());
 
     let auth_routes = ro_auth(db.clone());
 

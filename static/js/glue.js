@@ -1,19 +1,9 @@
 const BEARER = 'Bearer';
-const TOKEN_EXPIRATION_MINUTES = 60;
+const TOKEN_EXPIRATION_MINUTES = 5;
 
 function getBack() {
     window.history.back();
     location.reload();
-}
-
-function setCookie(name, value, minutes) {
-    var maxAge = "";
-    if (minutes) {
-        maxAge = "; max-age=" + (minutes * 60);
-    }
-    const cookie = name + "=" + (value || "")  + maxAge + "; path=/; samesite=none";
-    console.log("setting cookie = `" + cookie + "`");
-    document.cookie = cookie;
 }
 
 function getCookie(name) {
@@ -44,7 +34,7 @@ function request(method, ep, body = null, json = false, auth = true) {
     }
 
     if (auth) {
-        h["Authorization"] = BEARER + " " + getCookie(BEARER)
+        h["Authorization"] = BEARER + " " + getCookie(BEARER);
     }
 
     return fetch(ep, {
@@ -116,8 +106,7 @@ async function handleLogin(event) {
         displayErr(resp.message);
     } else {
         const token = await response.text();
-        setCookie(BEARER, token, TOKEN_EXPIRATION_MINUTES);
-        location.replace("/web");
+        window.location.replace("/web");
     }
 }
 
