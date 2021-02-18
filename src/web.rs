@@ -1,9 +1,44 @@
+use crate::html::HtmlContext;
 use crate::models::{Note, NoteWithTags, Tag};
+use crate::Error;
 use sailfish::TemplateOnce;
 use serde::Serialize;
+use warp::{reject, Rejection};
 
 pub const INDEX_SCRIPT: &[u8] = include_bytes!("../static/js/glue.js");
 pub const INDEX_STYLE: &[u8] = include_bytes!("../static/css/style.css");
+pub const FONT_AWESOME: &str =
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css";
+
+pub fn html_from<B, T, S>(body: B, title: T, script: S, style: S) -> Result<String, Rejection>
+where
+    B: TemplateOnce + Default,
+    T: AsRef<str>,
+    S: AsRef<[u8]>,
+{
+    HtmlContext::builder()
+        .lang("en")
+        .title(format!("Notor - {}", title.as_ref()))
+        .add_meta("viewport", "width=device-width, initial-scale=1")
+        .add_script(
+            std::str::from_utf8(script.as_ref())
+                .map_err(Error::from)
+                .map_err(reject::custom)?,
+        )
+        .add_style(
+            std::str::from_utf8(style.as_ref())
+                .map_err(Error::from)
+                .map_err(reject::custom)?,
+        )
+        .add_style_src(FONT_AWESOME)
+        .body(body)
+        .build()
+        .map_err(Error::from)
+        .map_err(reject::custom)?
+        .as_html()
+        .map_err(Error::from)
+        .map_err(reject::custom)
+}
 
 #[derive(Default, Debug, Serialize, TemplateOnce)]
 #[template(path = "index.stpl")]
@@ -62,4 +97,12 @@ impl TagView {
 
 #[derive(Default, Debug, Serialize, TemplateOnce)]
 #[template(path = "login.stpl")]
-pub struct Login {}
+pub struct Login {
+    err: String,
+}
+
+impl Login {
+    pub fn new<S: Into<String>>(err: S) -> Self {
+        Login { err: err.into() }
+    }
+}

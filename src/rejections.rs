@@ -1,10 +1,22 @@
-use super::models::ErrReply;
 use sailfish::RenderError;
 use std::convert::Infallible;
 use thiserror::Error;
 use warp::body::BodyDeserializeError;
 use warp::http::StatusCode;
-use warp::{reject, reply, Rejection, Reply};
+use warp::{reject::Reject, reply, Rejection, Reply};
+
+use crate::models::ErrReply;
+use crate::web::{html_from, Login, INDEX_SCRIPT, INDEX_STYLE};
+
+type Response = Result<warp::reply::Response, Infallible>;
+
+#[derive(Error, Debug)]
+pub enum WebError {
+    #[error("`{0}`")]
+    Inner(#[from] RejectError),
+}
+
+impl Reject for WebError {}
 
 #[derive(Error, Debug)]
 pub enum RejectError {
@@ -24,8 +36,6 @@ pub enum RejectError {
     AuthHeaderMissing,
     #[error("provided authentication header was invalid")]
     InvalidAuthHeader,
-    #[error("user has no perrmision to access this secition")]
-    UnauthorizedAccess,
     #[error("provided authentication token was invalid")]
     InvalidAuthToken,
     #[error("authentication token expired")]
@@ -33,7 +43,7 @@ pub enum RejectError {
     #[error("provided password was invalid")]
     InvalidPassword,
 }
-impl reject::Reject for RejectError {}
+impl Reject for RejectError {}
 
 impl RejectError {
     fn reply(&self) -> (StatusCode, String) {
@@ -44,15 +54,14 @@ impl RejectError {
             DbError(err) => match err {
                 RowNotFound => (StatusCode::NOT_FOUND, "not found".into()),
                 // #TODO: handle all
-                err => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
+                _ => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             },
-            InvalidRole(role) => (StatusCode::BAD_REQUEST, self.to_string()),
+            InvalidRole(_) => (StatusCode::BAD_REQUEST, self.to_string()),
             TokenCreationError(_) | Utf8ConversionError(_) | RenderError(_) | InvalidTimestamp => {
                 (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
             }
             AuthHeaderMissing | InvalidAuthHeader | InvalidAuthToken | AuthTokenExpired
             | InvalidPassword => (StatusCode::FORBIDDEN, self.to_string()),
-            UnauthorizedAccess => (StatusCode::UNAUTHORIZED, self.to_string()),
         }
     }
 }
@@ -71,10 +80,23 @@ pub(crate) async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infal
         let (c, m) = err.reply(); // issue #71126 destructuring_assignment
         code = c;
         message = m;
+    } else if let Some(err) = err.find::<WebError>() {
+        return handle_web_rejection(err).await.map(|v| v.into_response());
     }
 
-    Ok(reply::with_status(
-        reply::json(&ErrReply::new(message)),
-        code,
-    ))
+    Ok(reply::with_status(reply::json(&ErrReply::new(message)), code).into_response()) as Response
+}
+
+pub(crate) async fn handle_web_rejection(err: &WebError) -> Result<impl Reply, Infallible> {
+    let message = match err {
+        WebError::Inner(err) => err.reply().1,
+    };
+
+    let view = Login::new(&message);
+
+    if let Ok(html) = html_from(view, "Login".to_string(), INDEX_SCRIPT, INDEX_STYLE) {
+        Ok(reply::html(html).into_response()) as Response
+    } else {
+        Ok(reply::html(message).into_response()) as Response
+    }
 }

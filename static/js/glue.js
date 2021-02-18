@@ -1,5 +1,5 @@
 const BEARER = 'Bearer';
-const TOKEN_EXPIRATION = 60;
+const TOKEN_EXPIRATION_MINUTES = 60;
 
 function getBack() {
     window.history.back();
@@ -7,13 +7,13 @@ function getBack() {
 }
 
 function setCookie(name, value, minutes) {
-    var expires = "";
+    var maxAge = "";
     if (minutes) {
-        var date = new Date();
-        date.setTime(date.getTime() + (minutes * 60));
-        expires = "; expires=" + date.toUTCString();
+        maxAge = "; max-age=" + (minutes * 60);
     }
-    document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+    const cookie = name + "=" + (value || "")  + maxAge + "; path=/; samesite=none";
+    console.log("setting cookie = `" + cookie + "`");
+    document.cookie = cookie;
 }
 
 function getCookie(name) {
@@ -21,23 +21,30 @@ function getCookie(name) {
     var chars = document.cookie.split(';');
     for (var i = 0; i < chars.length; i++) {
         var ch = chars[i];
-        while (ch.charAt(0)==' ') ch = ch.substring(1, ch.length);
-        if (ch.indexOf(nameEq) == 0) return c.substring(nameEq.length,c.length);
+        while (ch.charAt(0) == ' ') {
+            ch = ch.substring(1, ch.length);
+        }
+        if (ch.indexOf(nameEq) == 0) {
+            return ch.substring(nameEq.length, ch.length);
+        }
     }
     return null;
 }
 
-function request(method, ep, body = null, json = false) {
+function request(method, ep, body = null, json = false, auth = true) {
     var b = null;
     var h = {};
     if (body !== null) {
         if (json) {
             b = JSON.stringify(body);
             h["Content-Type"] = "application/json";
-            h["Authorization"] = BEARER + " " + getCookie(BEARER)
         } else {
             b = body;
         }
+    }
+
+    if (auth) {
+        h["Authorization"] = BEARER + " " + getCookie(BEARER)
     }
 
     return fetch(ep, {
@@ -103,13 +110,13 @@ async function handleLogin(event) {
         pass: data.get("pass"),
     }
 
-    const response = await request("POST", "/auth", body = auth, json = true);
+    const response = await request("POST", "/auth", body = auth, json = true, auth = false);
     if (response.status !== 200) {
         const resp = await response.json();
         displayErr(resp.message);
     } else {
         const token = await response.text();
-        setCookie(BEARER, token, TOKEN_EXPIRATION);
+        setCookie(BEARER, token, TOKEN_EXPIRATION_MINUTES);
         location.replace("/web");
     }
 }
@@ -118,7 +125,6 @@ async function handleHref(event) {
     event.preventDefault;
     console.log(event);
 }
-
 
 document.addEventListener("DOMContentLoaded", function() {
     var newNote = document.querySelector("#new_note");
@@ -141,6 +147,9 @@ document.addEventListener("DOMContentLoaded", function() {
         links[i].addEventListener("onclick", handleHref);
     }
 
-    document.getElementById("err_box").style.visibility = "hidden";
+
+    var errBox = document.getElementById("err_box");
+    if (errBox.innerText.length == 0) errBox.visibility = "hidden";
+
 });
 

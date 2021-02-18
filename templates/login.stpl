@@ -7,6 +7,6 @@
     Password:
     <input type="password" id="pass" name="pass">
   </label>
-  <p id="err_box"></p>
+  <p class="err bigger" id="err_box"><%= err %></p>
   <button class="submit-btn clickable ok-hover" type="submit"><i class="fas fa-sign-in-alt"></i></button>
 </form>

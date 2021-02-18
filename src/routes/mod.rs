@@ -13,7 +13,7 @@ use warp::{
 
 use crate::auth::BEARER_COOKIE;
 use crate::db::Db;
-use crate::handlers::auth::{authorize, authorize_headers};
+use crate::handlers::auth::{authorize, authorize_web};
 use crate::models::UserRole;
 use crate::rejections::handle_rejection;
 
@@ -32,7 +32,7 @@ fn with_auth_cookie(
 ) -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
     cookie(BEARER_COOKIE)
         .map(move |token: String| (role.clone(), db.clone(), token))
-        .and_then(authorize)
+        .and_then(authorize_web)
 }
 
 pub fn with_auth_header(
@@ -41,7 +41,7 @@ pub fn with_auth_header(
 ) -> impl Filter<Extract = (String,), Error = Rejection> + Clone {
     headers_cloned()
         .map(move |headers: HeaderMap<HeaderValue>| (role.clone(), db.clone(), headers))
-        .and_then(authorize_headers)
+        .and_then(authorize)
 }
 
 pub fn routes(db: Db) -> impl Filter<Extract = impl Reply, Error = Infallible> + Clone {
@@ -66,12 +66,10 @@ pub fn routes(db: Db) -> impl Filter<Extract = impl Reply, Error = Infallible> +
 
     let auth_routes = ro_auth(db.clone());
 
-    let routes = notes_routes
+    notes_routes
         .or(tags_routes)
-        .or(web_routes)
         .or(auth_routes)
+        .or(web_routes)
         .recover(handle_rejection)
-        .with(warp::log::log("route::notes"));
-
-    return routes;
+        .with(warp::log("notor::routes"))
 }

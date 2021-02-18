@@ -112,10 +112,24 @@ RETURNING *
     }
 
     pub async fn delete(id: i32, conn: &DbConn) -> Result<(), DbErr> {
+        Self::clear_tags(id, &conn).await?;
         sqlx::query!(
             "
 DELETE FROM notes
 WHERE id = $1
+            ",
+            id
+        )
+        .execute(conn)
+        .await
+        .map(|_| ())
+    }
+
+    pub async fn clear_tags(id: i32, conn: &DbConn) -> Result<(), DbErr> {
+        sqlx::query!(
+            "
+DELETE FROM notes_tags
+WHERE note_id = $1
             ",
             id
         )

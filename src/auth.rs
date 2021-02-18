@@ -5,7 +5,7 @@ use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use warp::http::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 
 pub const BEARER_COOKIE: &str = "Bearer";
-const JWT_EXP_MIN: i64 = 2;
+const JWT_EXP_MIN: i64 = 60;
 pub const JWT_SECRET: &[u8] = b"*-sH*y2STY4Uz^jXE8rLQ_XePB%%A?fT";
 pub type Token = String;
 const BEARER: &str = "Bearer ";
