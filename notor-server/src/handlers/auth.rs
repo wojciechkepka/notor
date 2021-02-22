@@ -1,16 +1,17 @@
-use warp::{reject, Rejection, Reply};
-
-use crate::db::Db;
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
+use warp::{
+    http::{
+        header::{HeaderMap, HeaderValue},
+        Response,
+    },
+    reject, Rejection, Reply,
+};
 
 use crate::auth::{jwt_from_headers, jwt_gen, BEARER_COOKIE, JWT_EXP_MIN, JWT_SECRET};
+use crate::db::Db;
 use crate::models::{delete_claims, load_claims, load_claims_if_exists, load_user, save_claims};
 use crate::Error;
-use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use notor_core::models::{Claims, JsonAuth, UserRole};
-use warp::http::{
-    header::{HeaderMap, HeaderValue},
-    Response,
-};
 
 pub async fn authorize_headers(
     (role, db, headers): (UserRole, Db, HeaderMap<HeaderValue>),

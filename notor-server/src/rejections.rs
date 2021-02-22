@@ -1,9 +1,10 @@
-use crate::Error;
-use notor_core::models::ErrReply;
 use std::convert::Infallible;
 use warp::body::BodyDeserializeError;
 use warp::http::StatusCode;
 use warp::{reject::InvalidHeader, reply, Rejection, Reply};
+
+use crate::Error;
+use notor_core::models::ErrReply;
 
 type Response = Result<warp::reply::Response, Infallible>;
 

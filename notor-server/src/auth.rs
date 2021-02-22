@@ -1,8 +1,9 @@
-use crate::Error;
 use chrono::Utc;
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
-use notor_core::models::{Claims, UserRole};
 use warp::http::header::{HeaderMap, HeaderValue, AUTHORIZATION};
+
+use crate::Error;
+use notor_core::models::{Claims, UserRole};
 
 pub const BEARER_COOKIE: &str = "Bearer";
 pub const JWT_EXP_MIN: i64 = 5;

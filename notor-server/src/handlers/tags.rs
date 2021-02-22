@@ -3,7 +3,6 @@ use warp::{reject, reply, Rejection, Reply};
 use crate::db::Db;
 use crate::filters::QueryFilter;
 use crate::models::{delete_tag as _delete_tag, load_tag, save_tag, user_tags};
-
 use notor_core::models::NewTag;
 
 pub(crate) async fn get_tags(

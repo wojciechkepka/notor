@@ -1,15 +1,15 @@
+use warp::{reject, reply, Rejection, Reply};
+
 use super::lock_db;
+use crate::db::Db;
+use crate::filters::QueryFilter;
 use crate::models::{
     delete_note as del_note, load_note, load_notes, load_user_from_id, note_tags, save_note,
     save_tag, search_tag, tag_note as _tag_note, untag_note as _untag_note,
     update_note as upd_note,
 };
-use notor_core::models::{NewNote, NewTag};
-use warp::{reject, reply, Rejection, Reply};
-
-use crate::db::Db;
-use crate::filters::QueryFilter;
 use crate::Error;
+use notor_core::models::{NewNote, NewTag};
 
 pub(crate) async fn get_notes(
     filter: QueryFilter,
