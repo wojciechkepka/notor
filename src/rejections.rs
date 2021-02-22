@@ -13,6 +13,20 @@ use crate::web::{html_from, Login, INDEX_SCRIPT, INDEX_STYLE};
 
 type Response = Result<warp::reply::Response, Infallible>;
 
+fn redirect_login() -> impl Reply {
+    warp::redirect::temporary(Uri::from_static("/web/login"))
+}
+
+fn render_login_err(message: &str) -> impl Reply {
+    let view = Login::new(message);
+
+    if let Ok(html) = html_from(view, "Login".to_string(), INDEX_SCRIPT, INDEX_STYLE) {
+        reply::html(html).into_response()
+    } else {
+        reply::html(message.to_string()).into_response()
+    }
+}
+
 #[derive(Error, Debug)]
 pub enum WebError {
     #[error("`{0}`")]
@@ -95,10 +109,7 @@ pub(crate) async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infal
         message = m;
     } else if let Some(err) = err.find::<InvalidHeader>() {
         match err.name() {
-            "Cookie" => {
-                return Ok(warp::redirect::temporary(Uri::from_static("/web/login")).into_response())
-                    as Response
-            }
+            "Cookie" => return Ok(redirect_login().into_response()) as Response,
             _ => {
                 code = StatusCode::BAD_REQUEST;
                 message = err.to_string();
@@ -133,18 +144,12 @@ pub(crate) async fn handle_web_rejection(err: &WebError) -> Result<impl Reply, I
                 (StatusCode::FORBIDDEN, err.to_string())
             }
             AuthTokenExpired | AuthHeaderMissing => {
-                return Ok(warp::redirect::temporary(Uri::from_static("/web/login")).into_response())
+                return Ok(render_login_err("Authentication token expired").into_response())
                     as Response;
             }
             UnauthorizedAccess => (StatusCode::UNAUTHORIZED, err.to_string()),
         },
     };
 
-    let view = Login::new(&message);
-
-    if let Ok(html) = html_from(view, "Login".to_string(), INDEX_SCRIPT, INDEX_STYLE) {
-        Ok(reply::html(html).into_response()) as Response
-    } else {
-        Ok(reply::html(message).into_response()) as Response
-    }
+    Ok(render_login_err(&message).into_response()) as Response
 }

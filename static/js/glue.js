@@ -6,6 +6,10 @@ function getBack() {
     location.reload();
 }
 
+function goHome() {
+    window.location.replace("/web");
+}
+
 function getCookie(name) {
     var nameEq = name + "=";
     var chars = document.cookie.split(';');

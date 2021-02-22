@@ -107,3 +107,15 @@ impl Login {
         Login { err: err.into() }
     }
 }
+
+#[derive(Default, Debug, Serialize, TemplateOnce)]
+#[template(path = "404.stpl")]
+pub struct NotFound {
+    url: String,
+}
+
+impl NotFound {
+    pub fn new<S: Into<String>>(url: S) -> Self {
+        NotFound { url: url.into() }
+    }
+}
