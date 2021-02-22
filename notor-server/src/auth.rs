@@ -1,7 +1,7 @@
-use crate::models::{Claims, UserRole};
 use crate::Error;
 use chrono::Utc;
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+use notor_core::models::{Claims, UserRole};
 use warp::http::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 
 pub const BEARER_COOKIE: &str = "Bearer";

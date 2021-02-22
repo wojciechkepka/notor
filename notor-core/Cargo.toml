@@ -1,0 +1,15 @@
+[package]
+name = "notor-core"
+version = "0.1.0"
+authors = ["wojciechkepka <wojtek.kepka@protonmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+thiserror = "1"
+warp = "0.3"
+chrono = { version = "0.4", features = ["serde"] }
+sqlx = { version = "0.5.1", features = [ "runtime-tokio-rustls", "postgres", "macros", "chrono" ] }
+jsonwebtoken = "7"
+serde = { version = "1", features = ["derive"] }

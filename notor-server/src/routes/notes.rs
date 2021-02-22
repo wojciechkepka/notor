@@ -5,7 +5,7 @@ use super::{with_auth_header, with_db};
 use crate::db::Db;
 use crate::filters::QueryFilter;
 use crate::handlers::notes::*;
-use crate::models::UserRole;
+use notor_core::models::UserRole;
 
 pub(crate) fn ro_get_notes(db: Db) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path!("notes")

@@ -1,29 +1,32 @@
-use super::*;
-use crate::models::{NewNote, NewTag, Note, Tag, User};
+use super::lock_db;
+use crate::models::{
+    delete_note as del_note, load_note, load_notes, load_user_from_id, note_tags, save_note,
+    save_tag, search_tag, tag_note as _tag_note, untag_note as _untag_note,
+    update_note as upd_note,
+};
+use notor_core::models::{NewNote, NewTag};
+use warp::{reject, reply, Rejection, Reply};
+
+use crate::db::Db;
+use crate::filters::QueryFilter;
 use crate::Error;
-use warp::reject;
 
 pub(crate) async fn get_notes(
     filter: QueryFilter,
     username: String,
     conn: Db,
 ) -> Result<impl Reply, Rejection> {
-    Note::load_notes(filter, username, &conn)
+    load_notes(filter, username, &conn)
         .await
         .map(|note| reply::json(&note))
-        .map_err(Error::from)
         .map_err(reject::custom)
 }
 
 pub(crate) async fn get_note(id: i32, username: String, conn: Db) -> Result<impl Reply, Rejection> {
-    let note = Note::load(id, &conn)
-        .await
-        .map_err(Error::from)
-        .map_err(reject::custom)?;
+    let note = load_note(id, &conn).await.map_err(reject::custom)?;
 
-    let user = User::load_id(note.user_id, &conn)
+    let user = load_user_from_id(note.user_id, &conn)
         .await
-        .map_err(Error::from)
         .map_err(reject::custom)?;
 
     if user.username != username {
@@ -34,18 +37,16 @@ pub(crate) async fn get_note(id: i32, username: String, conn: Db) -> Result<impl
 }
 
 pub(crate) async fn put_note(note: NewNote, _: String, conn: Db) -> Result<impl Reply, Rejection> {
-    Note::save(&note, &conn)
+    save_note(&note, &conn)
         .await
         .map(|note| reply::json(&note))
-        .map_err(Error::from)
         .map_err(reject::custom)
 }
 
 pub(crate) async fn delete_note(id: i32, _: String, conn: Db) -> Result<impl Reply, Rejection> {
-    Note::delete(id, &conn)
+    del_note(id, &conn)
         .await
         .map(|_| reply::reply())
-        .map_err(Error::from)
         .map_err(reject::custom)
 }
 
@@ -55,10 +56,9 @@ pub(crate) async fn update_note(
     _: String,
     conn: Db,
 ) -> Result<impl Reply, Rejection> {
-    Note::update(id, &note, &conn)
+    upd_note(id, &note, &conn)
         .await
         .map(|_| reply::reply())
-        .map_err(RejectError::from)
         .map_err(reject::custom)
 }
 
@@ -68,13 +68,12 @@ pub(crate) async fn tag_note(
     username: String,
     conn: Db,
 ) -> Result<impl Reply, Rejection> {
-    let tag_id_ = match Tag::search(&tag, &username, &conn)
+    let tag_id_ = match search_tag(&tag, &username, &conn)
         .await
-        .map_err(RejectError::from)
         .map_err(reject::custom)?
     {
         Some(id) => Ok(id),
-        None => Tag::save(
+        None => save_tag(
             &NewTag {
                 name: tag,
                 username,
@@ -84,13 +83,11 @@ pub(crate) async fn tag_note(
         .await
         .map(|tag| tag.id),
     }
-    .map_err(RejectError::from)
     .map_err(reject::custom)?;
 
-    Note::tag(note_id_, tag_id_, &conn)
+    _tag_note(note_id_, tag_id_, &conn)
         .await
         .map(|_| reply::reply())
-        .map_err(RejectError::from)
         .map_err(reject::custom)
 }
 
@@ -100,10 +97,9 @@ pub(crate) async fn untag_note(
     _: String,
     conn: Db,
 ) -> Result<impl Reply, Rejection> {
-    Note::untag(note_id_, tag_id_, &conn)
+    _untag_note(note_id_, tag_id_, &conn)
         .await
         .map(|_| reply::reply())
-        .map_err(RejectError::from)
         .map_err(reject::custom)
 }
 
@@ -114,9 +110,8 @@ pub(crate) async fn get_note_tags(
 ) -> Result<impl Reply, Rejection> {
     let conn = lock_db(&conn)?;
 
-    Note::tags(note_id_, &conn)
+    note_tags(note_id_, &conn)
         .await
         .map(|tags| reply::json(&tags))
-        .map_err(RejectError::from)
         .map_err(reject::custom)
 }
