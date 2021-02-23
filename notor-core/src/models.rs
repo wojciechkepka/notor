@@ -111,6 +111,19 @@ pub struct JsonAuth {
     pub pass: String,
 }
 
+#[derive(Deserialize, Serialize, Debug)]
+pub struct JsonToken {
+    pub token: String,
+}
+
+impl JsonToken {
+    pub fn new<S: Into<String>>(token: S) -> Self {
+        JsonToken {
+            token: token.into(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Claims {
     pub sub: String,

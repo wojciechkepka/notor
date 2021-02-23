@@ -33,6 +33,7 @@ pub(crate) async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infal
             | Utf8ConversionError(_)
             | InvalidTimestamp
             | InvalidHeaderKey(_)
+            | BodySerializieError(_)
             | InvalidHeaderInternalErr(_) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
             AuthHeaderMissing | InvalidAuthHeader | InvalidAuthToken | AuthTokenExpired
             | InvalidPassword => (StatusCode::FORBIDDEN, err.to_string()),

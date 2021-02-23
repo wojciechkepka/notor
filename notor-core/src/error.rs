@@ -29,6 +29,8 @@ pub enum NotorError {
     InvalidHeaderInternalErr(#[from] warp::http::header::InvalidHeaderValue),
     #[error("internal error - `{0}`")]
     InvalidHeaderKey(#[from] warp::http::header::ToStrError),
+    #[error("failed to serialize value as json `{0}`")]
+    BodySerializieError(#[from] serde_json::Error),
 }
 
 impl Reject for NotorError {}
